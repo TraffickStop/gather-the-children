@@ -1,13 +1,17 @@
 # Getting Started
 
-## Setting up dependency management with venv
+## Installing headless chromedriver
+In order for the scripts in this repo to work you'll need to add the headless chromedriver and add it to your path. Follow the instructions on the chromium website to get the correct installation https://chromedriver.chromium.org/downloads.
+
+## Setting up dependency management with pip, venv, and pip-tools
 
 While in the project directory, create a virtual environment in the env/ folder
 ```
-python3 -m venv env
+python -m venv env
 ```
 
 Next, activate the environment.
+
 On Windows, run:
 ```
 env\Scripts\activate.bat
@@ -23,15 +27,19 @@ To deactivate your environment on both Windows or Mac, run:
 deactivate
 ```
 
-Once your environment is activated, you can add the current dependencies to the project by running:
+Once your environment is activated, add pip-tools to manage package versions:
 ```
-pip install -r requirements.txt
-```
-
-If you add a new dependency to the project using pip install you will need to write these dependencies to the requirements.txt file so other team members have the dependencies.
-While your virtual environment is active, run:
-```
-pip freeze > requirements.txt
+python -m pip install pip-tools
 ```
 
-Then commit the modified requirements.txt to the repo.
+Now install the current dependencies to the project:
+```
+pip-sync
+```
+
+If you need to add a dependency:
+* Add the dependency directly to the **requirements.in** file
+* Run `pip-compile` to generate a new **requirements.txt** file
+* Run `pip-sync` to install the dependencies to the virtual environment
+
+Then commit the modified **requirements.txt** and **requirements.in** files to the repo.
