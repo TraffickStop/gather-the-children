@@ -3,6 +3,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import pandas as pd
 import getopt, pdb, re, sys, time
@@ -29,7 +30,7 @@ options = webdriver.ChromeOptions()
 options.add_argument('--ignore-certificate-errors')
 options.add_argument('--incognito')
 options.add_argument('--headless')
-driver = webdriver.Chrome(options=options)
+driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
 def apply_filters(filters):
     if 'states' in filters: apply_state_filter(filters['states'])

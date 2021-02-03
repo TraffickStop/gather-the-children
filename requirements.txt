@@ -22,14 +22,26 @@ bleach==3.2.3
     # via nbconvert
 bs4==0.0.1
     # via -r requirements.in
+certifi==2020.12.5
+    # via requests
 cffi==1.14.4
     # via argon2-cffi
+chardet==4.0.0
+    # via requests
+colorama==0.4.4
+    # via crayons
+configparser==5.0.1
+    # via webdriver-manager
+crayons==0.4.0
+    # via webdriver-manager
 decorator==4.4.2
     # via ipython
 defusedxml==0.6.0
     # via nbconvert
 entrypoints==0.3
     # via nbconvert
+idna==2.10
+    # via requests
 ipykernel==5.4.3
     # via notebook
 ipython-genutils==0.2.0
@@ -122,6 +134,8 @@ pyzmq==22.0.2
     # via
     #   jupyter-client
     #   notebook
+requests==2.25.1
+    # via webdriver-manager
 selenium==3.141.0
     # via -r requirements.in
 send2trash==1.5.0
@@ -155,9 +169,13 @@ traitlets==5.0.5
     #   nbformat
     #   notebook
 urllib3==1.26.3
-    # via selenium
+    # via
+    #   requests
+    #   selenium
 wcwidth==0.2.5
     # via prompt-toolkit
+webdriver-manager==3.3.0
+    # via -r requirements.in
 webencodings==0.5.1
     # via bleach
 
