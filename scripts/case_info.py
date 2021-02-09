@@ -1,4 +1,7 @@
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -35,7 +38,16 @@ def scrape_investigating_agencies(new_df):
     case_number = row['Case Number'] 
 
     driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
-    time.sleep(1)
+
+    try:
+        element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'icon-chevron-up'))
+        )
+        time.sleep(0.5)
+    except Exception as e:
+        print('could not find element')
+        raise e
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     investigating_agencies_section = soup.find('div', id='InvestigatingAgencies')
 
@@ -48,27 +60,38 @@ def scrape_investigating_agencies(new_df):
 
     dataframe_labels = {}
 
+    # TODO: get all data-labels for some reason it's cutting off Agency Case Number and date reported as well as notes
     data_labels = investigating_agencies_section.find('div', class_='contact-expanded').find_all('span', class_='data-label')
     for label in data_labels:
         if label.text.lower() == 'address':
             dataframe_labels['Address'] = label.find_next_sibling('span', class_='multi-line').text
         else:
+            pdb.set_trace()
             dataframe_labels[label.text] = label.next_sibling.strip()
-    
+   pdb.set_trace() 
     row['Agency Name'] = agency_name
     row['Agency Address'] = dataframe_labels['Address'] if 'Address' in dataframe_labels else print(f'Error finding column for {case_number}')
     row['Agency County'] = dataframe_labels['County'] if 'County' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Email'] = dataframe_labels['Agency Type'] if 'Agency Type' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Website'] = dataframe_labels['Main Phone'] if 'Main Phone' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency ORI'] = dataframe_labels['General Email'] if 'General Email' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Jurisdiction'] = dataframe_labels['Website URL'] if 'Website URL' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Case Number'] = dataframe_labels['ORI'] if 'ORI' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Type'] = dataframe_labels['Agency Type'] if 'Agency Type' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Main Phone'] = dataframe_labels['Main Phone'] if 'Main Phone' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency General Email'] = dataframe_labels['General Email'] if 'General Email' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Website URL'] = dataframe_labels['Website URL'] if 'Website URL' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency ORI'] = dataframe_labels['ORI'] if 'ORI' in dataframe_labels else print(f'Error finding column for {case_number}')
     row['Agency Date Reported'] = dataframe_labels['Jurisdiction'] if 'Jurisdiction' in dataframe_labels else print(f'Error finding column for {case_number}')
     row['Agency Investigator'] = agency_investigator
 
     return row
 
 def scrape_namus_contact_section(row):
+    try:
+        element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'rsa-contact'))
+        )
+        time.sleep(0.5)
+    except Exception as e:
+        print('could not find element')
+        raise e
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     contact_info_section = soup.find('case-contact-information')
 
@@ -88,7 +111,7 @@ def main():
     path = f'./data_files/case_contact_info{time.time()}.infer'
 
     for index, row in all_cases.iterrows():
-        if index % 200 == 0: pdb.set_trace() # save 100 results to out file
+        if index % 5 == 0: pdb.set_trace() # save 100 results to out file
         try:
             print(index)
             case_id = row['Case Number'][2:] # Case number format is "MP1234"
