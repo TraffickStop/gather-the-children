@@ -30,13 +30,14 @@ options.add_argument('--incognito')
 options.add_argument('--headless')
 driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
-def scrape_investigating_agencies(row):
-    case_number = row.iloc[0]['Case Number'] 
+def scrape_investigating_agencies(new_df):
+    row = new_df.iloc[0]
+    case_number = row['Case Number'] 
 
     driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
+    time.sleep(1)
     soup = BeautifulSoup(driver.page_source, 'lxml')
     investigating_agencies_section = soup.find('div', id='InvestigatingAgencies')
-    pdb.set_trace()
 
     agency_name = investigating_agencies_section.find('i', class_='icon-chevron-up').find_next_sibling('span', class_='name-inline').text
 
@@ -54,16 +55,16 @@ def scrape_investigating_agencies(row):
         else:
             dataframe_labels[label.text] = label.next_sibling.strip()
     
-    row.iloc[0]['Agency Name'] = agency_name
-    row.iloc[0]['Agency Address'] = dataframe_labels['Address'] if 'Address' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency County'] = dataframe_labels['County'] if 'County' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency Email'] = dataframe_labels['Agency Type'] if 'Agency Type' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency Website'] = dataframe_labels['Main Phone'] if 'Main Phone' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency ORI'] = dataframe_labels['General Email'] if 'General Email' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency Jurisdiction'] = dataframe_labels['Website URL'] if 'Website URL' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency Case Number'] = dataframe_labels['ORI'] if 'ORI' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency Date Reported'] = dataframe_labels['Jurisdiction'] if 'Jurisdiction' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row.iloc[0]['Agency Investigator'] = agency_investigator
+    row['Agency Name'] = agency_name
+    row['Agency Address'] = dataframe_labels['Address'] if 'Address' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency County'] = dataframe_labels['County'] if 'County' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Email'] = dataframe_labels['Agency Type'] if 'Agency Type' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Website'] = dataframe_labels['Main Phone'] if 'Main Phone' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency ORI'] = dataframe_labels['General Email'] if 'General Email' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Jurisdiction'] = dataframe_labels['Website URL'] if 'Website URL' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Case Number'] = dataframe_labels['ORI'] if 'ORI' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Date Reported'] = dataframe_labels['Jurisdiction'] if 'Jurisdiction' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Investigator'] = agency_investigator
 
     return row
 
@@ -75,9 +76,9 @@ def scrape_namus_contact_section(row):
     namus_contact_phone = contact_info_section.find('i', class_='icon-phone').next_sibling.strip() 
     namus_contact_email = contact_info_section.find('i', class_='icon-mail').next_sibling.strip() 
 
-    row.iloc[0]['Namus Contact Name'] = namus_contact_name
-    row.iloc[0]['Namus Phone Number'] = namus_contact_phone
-    row.iloc[0]['Namus Email'] = namus_contact_email
+    row['Namus Contact Name'] = namus_contact_name
+    row['Namus Phone Number'] = namus_contact_phone
+    row['Namus Email'] = namus_contact_email
 
     return row
 
@@ -87,6 +88,7 @@ def main():
     path = f'./data_files/case_contact_info{time.time()}.infer'
 
     for index, row in all_cases.iterrows():
+        if index % 200 == 0: pdb.set_trace() # save 100 results to out file
         try:
             print(index)
             case_id = row['Case Number'][2:] # Case number format is "MP1234"
@@ -98,8 +100,6 @@ def main():
 
             case_contact_row = scrape_namus_contact_section(case_contact_row)
             case_contact_row = scrape_investigating_agencies(case_contact_row)
-            pdb.set_trace()
-            case_contact_row = scrape_case_contributors(case_contact_row)
 
             case_contacts = case_contacts.append(case_contact_row, ignore_index=True)
         except Exception as e:
