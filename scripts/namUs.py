@@ -176,7 +176,7 @@ def main(argv):
     except Exception as e:
         print(f'Exception thrown. Saving existing data to pickle: {path}')
         info_df.to_pickle(path)
-        driver.quit
+        driver.quit()
         print(e)
 
     print(f'saving data to pickle: {path}')
