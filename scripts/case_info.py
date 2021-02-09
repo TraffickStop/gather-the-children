@@ -17,12 +17,15 @@ CONTACT_COLUMNS = [
     'Agency Name',
     'Agency Address',
     'Agency County',
-    'Agency Email',
-    'Agency Website',
+    'Agency Type',
+    'Agency Main Phone',
+    'Agency General Email',
+    'Agency Website URL',
     'Agency ORI',
     'Agency Jurisdiction',
     'Agency Case Number',
     'Agency Date Reported',
+    'Agency Notes',
     'Agency Investigator'
 ]
 
@@ -33,8 +36,7 @@ options.add_argument('--incognito')
 options.add_argument('--headless')
 driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
-def scrape_investigating_agencies(new_df):
-    row = new_df.iloc[0]
+def scrape_investigating_agencies(row):
     case_number = row['Case Number'] 
 
     driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
@@ -43,9 +45,9 @@ def scrape_investigating_agencies(new_df):
         element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, 'icon-chevron-up'))
         )
-        time.sleep(0.5)
+        time.sleep(1)
     except Exception as e:
-        print('could not find element')
+        print('could not find element after waiting 10 seconds.')
         raise e
 
     soup = BeautifulSoup(driver.page_source, 'lxml')
@@ -58,26 +60,27 @@ def scrape_investigating_agencies(new_df):
     else:
         agency_investigator = None
 
-    dataframe_labels = {}
+    labels_in_section = {}
 
-    # TODO: get all data-labels for some reason it's cutting off Agency Case Number and date reported as well as notes
-    data_labels = investigating_agencies_section.find('div', class_='contact-expanded').find_all('span', class_='data-label')
+    data_labels = investigating_agencies_section.find_all('span', class_='data-label')
     for label in data_labels:
         if label.text.lower() == 'address':
-            dataframe_labels['Address'] = label.find_next_sibling('span', class_='multi-line').text
+            labels_in_section['Address'] = label.find_next_sibling('span', class_='multi-line').text
         else:
-            pdb.set_trace()
-            dataframe_labels[label.text] = label.next_sibling.strip()
-   pdb.set_trace() 
+            labels_in_section[label.text] = label.next_sibling.strip()
+
     row['Agency Name'] = agency_name
-    row['Agency Address'] = dataframe_labels['Address'] if 'Address' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency County'] = dataframe_labels['County'] if 'County' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Type'] = dataframe_labels['Agency Type'] if 'Agency Type' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Main Phone'] = dataframe_labels['Main Phone'] if 'Main Phone' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency General Email'] = dataframe_labels['General Email'] if 'General Email' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Website URL'] = dataframe_labels['Website URL'] if 'Website URL' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency ORI'] = dataframe_labels['ORI'] if 'ORI' in dataframe_labels else print(f'Error finding column for {case_number}')
-    row['Agency Date Reported'] = dataframe_labels['Jurisdiction'] if 'Jurisdiction' in dataframe_labels else print(f'Error finding column for {case_number}')
+    row['Agency Address'] = labels_in_section['Address'] if 'Address' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency County'] = labels_in_section['County'] if 'County' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency Type'] = labels_in_section['Agency Type'] if 'Agency Type' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency Main Phone'] = labels_in_section['Main Phone'] if 'Main Phone' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency General Email'] = labels_in_section['General Email'] if 'General Email' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency Website URL'] = labels_in_section['Website URL'] if 'Website URL' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency ORI'] = labels_in_section['ORI'] if 'ORI' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency Jurisdiction'] = labels_in_section['Jurisdiction'] if 'Jurisdiction' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency Case Number'] = labels_in_section['Agency Case Number'] if 'Agency Case Number' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency Date Reported'] = labels_in_section['Date Reported'] if 'Date Reported' in labels_in_section else print(f'Error finding column for {case_number}')
+    row['Agency Notes'] = labels_in_section['Notes'] if 'Notes' in labels_in_section else print(f'Error finding column for {case_number}')
     row['Agency Investigator'] = agency_investigator
 
     return row
@@ -89,7 +92,7 @@ def scrape_namus_contact_section(row):
         )
         time.sleep(0.5)
     except Exception as e:
-        print('could not find element')
+        print('could not find element after waiting 10 seconds')
         raise e
 
     soup = BeautifulSoup(driver.page_source, 'lxml')
@@ -111,13 +114,13 @@ def main():
     path = f'./data_files/case_contact_info{time.time()}.infer'
 
     for index, row in all_cases.iterrows():
-        if index % 5 == 0: pdb.set_trace() # save 100 results to out file
+        if index % 5 == 0: pdb.set_trace() # check after every 5 scrapes
         try:
             print(index)
             case_id = row['Case Number'][2:] # Case number format is "MP1234"
 
             case_contact_row = pd.DataFrame(columns=CONTACT_COLUMNS).append(pd.Series(dtype="object"), ignore_index=True)
-            case_contact_row.iloc[0]['Case Number'] = row['Case Number']
+            case_contact_row['Case Number'] = row['Case Number']
 
             driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/contacts?nav')
 
