@@ -1,10 +1,7 @@
-#!/usr/bin/env python
-
-from selenium import webdriver
+from bs4 import BeautifulSoup
+from helpers.selenium import SeleniumScraper
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
 import pandas as pd
 import getopt, pdb, re, sys, time
 
@@ -24,13 +21,6 @@ INFO_COLUMNS = [
     'Date Modified'
 ]
 MAX_ROWS_PER_PAGE = 100
-
-# initialize global driver
-options = webdriver.ChromeOptions()
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--incognito')
-options.add_argument('--headless')
-driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
 def apply_filters(filters):
     if 'states' in filters: apply_state_filter(filters['states'])
@@ -155,6 +145,10 @@ def search():
 
 def main(argv):
     filters = parse_args(argv)
+
+    global driver
+    driver = SeleniumScraper.get_driver()
+
     path = f'./data_files/states_missing_info{time.time()}.infer'
 
     print('Navigating to namus.gov...')
@@ -184,6 +178,3 @@ def main(argv):
     driver.quit()
 
     print('scraping completed')
-
-if __name__ == '__main__':
-    main(sys.argv[1:])

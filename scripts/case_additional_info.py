@@ -1,9 +1,8 @@
-from selenium import webdriver
+from bs4 import BeautifulSoup
+from helpers.selenium import SeleniumScraper
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
 import pandas as pd
 import pdb, time
 
@@ -34,13 +33,6 @@ ADDITIONAL_INFO_COLUMNS = [
     'Right Eye Color',
     'Eye Description'
 ]
-
-# global variables
-options = webdriver.ChromeOptions()
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--incognito')
-options.add_argument('--headless')
-driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
 def scrape_demographics(row):
     soup = BeautifulSoup(driver.page_source, 'lxml')
@@ -112,6 +104,8 @@ def scrape_physical_description(row):
 
 def main():
     all_cases = pd.read_pickle(MISSING_PERSONS_FILE)
+    global driver = SeleniumScraper.get_driver()
+
     case_additional_info = pd.DataFrame(columns=ADDITIONAL_INFO_COLUMNS)
     path = f'./data_files/case_additional_info{time.time()}.infer'
 

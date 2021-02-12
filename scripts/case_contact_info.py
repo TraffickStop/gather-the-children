@@ -1,9 +1,8 @@
-from selenium import webdriver
+from bs4 import BeautifulSoup
+from helpers.selenium import SeleniumScraper
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
 import pandas as pd
 import pdb, time
 
@@ -28,13 +27,6 @@ CONTACT_COLUMNS = [
     'Agency Notes',
     'Agency Investigator'
 ]
-
-# global variables
-options = webdriver.ChromeOptions()
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--incognito')
-options.add_argument('--headless')
-driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
 def scrape_investigating_agencies(row):
     case_number = row['Case Number'] 
@@ -110,6 +102,8 @@ def scrape_namus_contact_section(row):
 
 def main():
     all_cases = pd.read_pickle(MISSING_PERSONS_FILE)
+    global driver = SeleniumScraper.get_driver()
+
     case_contacts = pd.DataFrame(columns=CONTACT_COLUMNS)
     path = f'./data_files/case_contact_info{time.time()}.infer'
 
