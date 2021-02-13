@@ -1,7 +1,5 @@
 # Getting Started
 
-## Setting up dependency management with pip, venv, and pip-tools
-
 While in the project directory, create a virtual environment in the env/ folder
 ```
 python -m venv env
@@ -40,3 +38,9 @@ If you need to add a dependency:
 * Run `pip-sync` to install the dependencies to the virtual environment
 
 Then commit the modified **requirements.txt** and **requirements.in** files to the repo.
+
+# Where does the code live
+
+The `collect_case_numbers/` directory contains code for a lambda function that runs once a week and grabs the latest case numbers. It will pass in the last date that the lambda function was run. After getting all of the case numbers it sends the case numbers to the `case-numbers` queue in us-east-1
+
+The `gather_case_info/` directory contains code for a lambda function that runs whenever there are messages in the `case-numbers` queue. It will gather case info for the case number received from the sqs queue.

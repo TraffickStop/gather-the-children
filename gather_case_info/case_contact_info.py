@@ -101,35 +101,36 @@ def scrape_namus_contact_section(row):
     return row
 
 def main():
-    all_cases = pd.read_pickle(MISSING_PERSONS_FILE)
-    global driver = SeleniumScraper.get_driver()
+    # all_cases = pd.read_pickle(MISSING_PERSONS_FILE)
+    global driver
+    driver = SeleniumScraper.get_driver()
 
-    case_contacts = pd.DataFrame(columns=CONTACT_COLUMNS)
-    path = f'./data_files/case_contact_info{time.time()}.infer'
+    # case_contacts = pd.DataFrame(columns=CONTACT_COLUMNS)
+    # path = f'./data_files/case_contact_info{time.time()}.infer'
 
-    for index, row in all_cases.iterrows():
-        if index % 5 == 0: pdb.set_trace() # check after every 5 scrapes
-        try:
-            print(index)
-            case_id = row['Case Number'][2:] # Case number format is "MP1234"
+    # for index, row in all_cases.iterrows():
+    #     if index % 5 == 0: pdb.set_trace() # check after every 5 scrapes
+    #     try:
+    #         print(index)
+    #         case_id = row['Case Number'][2:] # Case number format is "MP1234"
 
-            case_contact_row = pd.DataFrame(columns=CONTACT_COLUMNS).append(pd.Series(dtype="object"), ignore_index=True)
-            case_contact_row['Case Number'] = row['Case Number']
+    #         case_contact_row = pd.DataFrame(columns=CONTACT_COLUMNS).append(pd.Series(dtype="object"), ignore_index=True)
+    #         case_contact_row['Case Number'] = row['Case Number']
 
-            driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/contacts?nav')
+    #         driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/contacts?nav')
 
-            case_contact_row = scrape_namus_contact_section(case_contact_row)
-            case_contact_row = scrape_investigating_agencies(case_contact_row)
+    #         case_contact_row = scrape_namus_contact_section(case_contact_row)
+    #         case_contact_row = scrape_investigating_agencies(case_contact_row)
 
-            case_contacts = case_contacts.append(case_contact_row, ignore_index=True)
-        except Exception as e:
-            print(e)
-            print(index, row)
-            pdb.set_trace()
-            case_contacts.to_pickle(path)
+    #         case_contacts = case_contacts.append(case_contact_row, ignore_index=True)
+    #     except Exception as e:
+    #         print(e)
+    #         print(index, row)
+    #         pdb.set_trace()
+    #         case_contacts.to_pickle(path)
     
-    pdb.set_trace()
-    case_contacts.to_pickle(path)
+    # pdb.set_trace()
+    # case_contacts.to_pickle(path)
 
 if __name__ == '__main__':
     main()

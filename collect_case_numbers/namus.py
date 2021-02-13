@@ -4,7 +4,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 import pandas as pd
 import getopt, pdb, re, sys, time
-
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 # CONSTANTS
 CASE_NUMBER_KEY = 'Case Number'
 INFO_COLUMNS = [
@@ -102,7 +103,7 @@ def parse_args(argv):
     Example usage: namUs.py --states=Utah,Arizona,California
     Options:
         --states=:  States flag; accepts a comma-separated list ie.(--states=Arizona,Utah,California)
-        -date=:     Date of Last Contact. Can search greater than or less than a given date
+        --date=:     Date of Last Contact. Can search greater than or less than a given date
                     Example:    --date=">=January-5-1986" (sorts greater than the given date)
                                 --date="<=January-5-1986" (sorts less than the given date)
         -h :        Shows this help Screen; can also use --help
@@ -147,34 +148,43 @@ def main(argv):
     filters = parse_args(argv)
 
     global driver
-    driver = SeleniumScraper.get_driver()
+    config = ['ignore-certificate-errors', 'incognito', 'headless', 'disable-dev-shm-usage', 'no-sandbox']
+    options = webdriver.ChromeOptions()
+    for option in config:
+        options.add_argument(f'--{option}')
 
-    path = f'./data_files/states_missing_info{time.time()}.infer'
+    driver = webdriver.Chrome(options=options)
 
-    print('Navigating to namus.gov...')
-    driver.get("https://www.namus.gov/MissingPersons/Search")
+    driver.get('http://whatismyip.host/')
+    soup = BeautifulSoup(driver.page_source, 'lxml')
+    return soup.find('p', class_="ipaddress").text
 
-    apply_filters(filters)
-    search()
+    # path = f'./data_files/states_missing_info{time.time()}.infer'
 
-    rows_to_show(MAX_ROWS_PER_PAGE)
-    page_nums = get_page_numbers()
-    info_df = pd.DataFrame(columns=INFO_COLUMNS)
+    # print('Navigating to namus.gov...')
+    # driver.get("https://www.namus.gov/MissingPersons/Search")
 
-    try:
-        for page in range(page_nums):
-            print(f'starting page {page}...')
-            new_df = get_info_results()
-            info_df = info_df.append(new_df, ignore_index=True)
-            next_page()
-    except Exception as e:
-        print(f'Exception thrown. Saving existing data to pickle: {path}')
-        info_df.to_pickle(path)
-        driver.quit()
-        print(e)
+    # apply_filters(filters)
+    # search()
 
-    print(f'saving data to pickle: {path}')
-    info_df.to_pickle(path)
-    driver.quit()
+    # rows_to_show(MAX_ROWS_PER_PAGE)
+    # page_nums = get_page_numbers()
+    # info_df = pd.DataFrame(columns=INFO_COLUMNS)
 
-    print('scraping completed')
+    # try:
+    #     for page in range(page_nums):
+    #         print(f'starting page {page}...')
+    #         new_df = get_info_results()
+    #         info_df = info_df.append(new_df, ignore_index=True)
+    #         next_page()
+    # except Exception as e:
+    #     print(f'Exception thrown. Saving existing data to pickle: {path}')
+    #     info_df.to_pickle(path)
+    #     driver.quit()
+    #     print(e)
+
+    # print(f'saving data to pickle: {path}')
+    # info_df.to_pickle(path)
+    # driver.quit()
+
+    # print('scraping completed')
