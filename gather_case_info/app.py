@@ -1,36 +1,47 @@
 import boto3
-import case_additional_info.main as add_additional_info
-import case_contact_info.main as add_contact_info
+import case_info.main as add_additional_info
+import pdb
 
 def handler(event, context):
-    error = None
-    status_code = 200
-    ip = None
-
     try:
         case_info = context.message # message from sqs
         case_info = add_additional_info(case_info)
-        case_info = add_contact_info(case_info)
-        # TODO: case_info = add_image_paths(case_info)
         # TODO: upload_image_to_s3(case_info)
-        write_to_db(case_info)
+        # TODO: write_to_db(case_info)
+        
+        pdb.set_trace()
+        return {
+            'statusCode': 200,
+            'body': case_info
+        }
     except Exception as e:
-        status_code = 400
-        error = e
-        print(error)
+        pdb.set_trace()
+        print(e)
 
-    return {
-        'statusCode': status_code,
-        'body': ip,
-        'error': error
-    }
+        return {
+            'statusCode': 400,
+            'error': e
+        }
 
 def write_to_db(record):
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('users')
     table.put_item(Item=record)
 
-# TODO: def upload_image_to_s3(record):
-    # upload image to s3 and
+context = {
+    'message': {
+        'Case Number': 'MP14787',
+        'DLC': '01/31/2006',
+        'Last Name': 'Smatlak',
+        'First Name': 'Donald',
+        'Missing Age': '25 Years',
+        'City': 'North Versailles',
+        'County': 'Allegheny',
+        'State': 'PA',
+        'Sex': 'Male',
+        'Race': 'White / Caucasian',
+        'Date Modified': '04/03/2020'
+    }
+}
 
-handler(None, None)
+handler(None, context)
