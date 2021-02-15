@@ -61,7 +61,10 @@ KEYS_NOT_TO_MAP = [
     'Missing From Tribal Land',
     'Primary Residence on Tribal Land',
     'Item',
-    'Description'
+    'Description',
+    'Phone',
+    'Secondary Phone',
+    'Email'
 ]
 
 def init_driver():
@@ -182,7 +185,7 @@ def wait_for_driver_load(by_identifier, identifier, additional_sec=0):
 
 def main(case_info):
     init_driver()
-    case_id = case_info['Case Number'][2:] # Case number format is "MP1234"
+    case_id = case_info['caseNumber'][2:] # Case number format is "MP1234"
 
     print('Navigating to Namus.gov details section...')
     driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/details?nav')
