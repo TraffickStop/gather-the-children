@@ -10,8 +10,6 @@ RUN curl https://chromedriver.storage.googleapis.com/88.0.4324.96/chromedriver_l
 RUN unzip chromedriver.zip
 RUN rm -rf chromedriver.zip 
 
-RUN mv chromedriver /var/lang/bin
-
 COPY . .
 
 RUN pip install -r requirements.txt

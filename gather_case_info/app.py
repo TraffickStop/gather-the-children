@@ -11,7 +11,7 @@ def handler(event, context):
     except Exception as e:
         status_code = 400
         error = e
-    print(ip)
+        print(e)
     return {
         'statusCode': status_code,
         'body': ip,

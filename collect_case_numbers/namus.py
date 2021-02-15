@@ -22,7 +22,7 @@ INFO_COLUMNS = [
     'Date Modified'
 ]
 MAX_ROWS_PER_PAGE = 100
-
+PATH_TO_WEBDRIVER = '/var/task/chromedriver'
 def apply_filters(filters):
     if 'states' in filters: apply_state_filter(filters['states'])
     if 'date_operand' in filters: apply_date_filter(filters)
@@ -148,12 +148,12 @@ def main(argv):
     filters = parse_args(argv)
 
     global driver
-    config = ['ignore-certificate-errors', 'incognito', 'headless', 'disable-dev-shm-usage', 'no-sandbox']
+    config = ['no-sandbox', 'disable-dev-shm-usage', 'ignore-certificate-errors', 'incognito', 'headless']
     options = webdriver.ChromeOptions()
     for option in config:
         options.add_argument(f'--{option}')
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(PATH_TO_WEBDRIVER, options=options)
 
     driver.get('http://whatismyip.host/')
     soup = BeautifulSoup(driver.page_source, 'lxml')
