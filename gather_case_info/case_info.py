@@ -1,60 +1,71 @@
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import pdb
+from selenium import webdriver
+import pdb, time
 
+# CONSTANTS
 SCRAPED_TO_DB_KEYS = {
     # Demographics Keys
-    'Missing Age': 'Missing Age',
-    'Current Age': 'Current Age',
-    'First Name': 'First Name',
-    'Middle Name': 'Middle Name',
-    'Last Name': 'Last Name',
-    'Nickname/Alias': 'Nickname',
-    'Sex': 'Sex',
-    'Height': 'Height',
-    'Weight': 'Weight',
-    'Race / Ethnicity': 'Race',
+    'Missing Age': 'missingAge',
+    'Current Age': 'currentAge',
+    'First Name': 'firstName',
+    'Middle Name': 'middleName',
+    'Last Name': 'lastName',
+    'Nickname/Alias': 'nickname',
+    'Sex': 'sex',
+    'Height': 'height',
+    'Weight': 'weight',
+    'Race / Ethnicity': 'race',
 
     # Circumstance keys
-    'Date of Last Contact': 'Date of Last Contact',
-    'NamUs Case Created': 'NamUs Case Created',
-    'Location': 'Location',
-    'County': 'County',
-    'Circumstances of Disappearance': 'Circumstances of Disappearance',
+    'Date of Last Contact': 'dateOfLastContact',
+    'NamUs Case Created': 'namusCaseCreated',
+    'Location': 'location',
+    'County': 'county',
+    'Circumstances of Disappearance': 'circumstancesOfDisappearance',
 
     # Physical Description Keys
-    'Hair Color': 'Hair Color',
-    'Head Hair Description': 'Head Hair Description',
-    'Body Hair Description': 'Body Hair Description',
-    'Facial Hair Description': 'Facial Hair Description',
-    'Left Eye Color': 'Left Eye Color',
-    'Right Eye Color': 'Right Eye Color',
-    'Eye Description': 'Eye Description',
+    'Hair Color': 'hairColor',
+    'Head Hair Description': 'headHairDescription',
+    'Body Hair Description': 'bodyHairDescription',
+    'Facial Hair Description': 'facialHairDescription',
+    'Left Eye Color': 'leftEyeColor',
+    'Right Eye Color': 'rightEyeColor',
+    'Eye Description': 'eyeDescription',
 
     # Investigating Agency
-    'Agency Name': 'Agency Name',
-    'Agency Investigator': 'Agency Investigator',
-    'Address': 'Agency Address',
-    'County': 'Agency County',
-    'Agency Type': 'Agency Type',
-    'Main Phone': 'Agency Main Phone',
-    'General Email': 'Agency General Email',
-    'Website URL': 'Agency Website URL',
-    'ORI': 'Agency ORI',
-    'Jurisdiction': 'Agency Jurisdiction',
-    'Agency Case Number': 'Agency Case Number',
-    'Date Reported': 'Agency Date Reported',
-    'Notes': 'Agency Notes',
+    'Agency Name': 'agencyName',
+    'Agency Investigator': 'agencyInvestigator',
+    'Address': 'agencyAddress',
+    'Agency County': 'agencyCounty',
+    'Agency Type': 'agencyType',
+    'Main Phone': 'agencyMainPhone',
+    'General Email': 'agencyGeneralEmail',
+    'Website URL': 'agencyWebsiteURL',
+    'ORI': 'agencyOri',
+    'Jurisdiction': 'agencyJurisdiction',
+    'Agency Case Number': 'agencyCaseNumber',
+    'Date Reported': 'agencyDateReported',
+    'Notes': 'agencyNotes',
 
     # Contact Info
-    'Namus Contact Name': 'Namus Contact Name',
-    'Namus Phone Number': 'Namus Phone Number',
-    'Namus Email': 'Namus Email'
+    'Namus Contact Name': 'namusContactName',
+    'Namus Phone Number': 'namusPhoneNumber',
+    'Namus Email': 'namusEmail'
 }
+KEYS_NOT_TO_MAP = [
+    'Associated Tribe(s):',
+    'Missing From Tribal Land',
+    'Primary Residence on Tribal Land',
+    'Item',
+    'Description'
+]
 
 def init_driver():
+    print('Initializing global driver to variable named "driver"')
     config = ['ignore-certificate-errors', 'incognito', 'headless']
     options = webdriver.ChromeOptions()
     for option in config:
@@ -63,9 +74,9 @@ def init_driver():
     global driver
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
-    wait_for_driver_load(By.ID, 'Demographics')
-
 def scrape_demographics(record):
+    print('Scraping demographics section...')
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     demographics_section = soup.find('div', id='Demographics')
     labels = demographics_section.find_all('span', class_='data-label')
@@ -78,6 +89,8 @@ def scrape_demographics(record):
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_circumstances(record):
+    print('Scraping circumstances section...')
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     circumstances_section = soup.find('div', id='Circumstances')
     labels = circumstances_section.find_all('span', class_='data-label')
@@ -92,6 +105,8 @@ def scrape_circumstances(record):
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_investigating_agencies(record):
+    print('Scraping investigating agencies section...')
+
     driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
     wait_for_driver_load(By.CLASS_NAME, 'icon-chevron-up', additional_sec=1)
 
@@ -112,10 +127,16 @@ def scrape_investigating_agencies(record):
             scraped_data['Address'] = label.find_next_sibling('span', class_='multi-line').text
         else:
             scraped_data[label.text] = label.next_sibling.strip()
-
+    
+    # change generic county key to specific agency county key and remove old key
+    scraped_data['Agency County'] = scraped_data['County']
+    scraped_data.pop('County', None) 
+    
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_namus_contact_section(record):
+    print('Scraping agencies contact section...')
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     contact_info_section = soup.find('case-contact-information')
     scraped_data = {}
@@ -127,6 +148,8 @@ def scrape_namus_contact_section(record):
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_physical_description(record):
+    print('Scraping physical description section...')
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     physical_description_section = soup.find('div', id='PhysicalDescription')
     data_labels = physical_description_section.find_all('span', class_='data-label')
@@ -142,6 +165,7 @@ def scrape_physical_description(record):
     
 def map_scraped_keys_to_db_keys(scraped_data, record):
     for key in scraped_data:
+        if key in KEYS_NOT_TO_MAP: continue
         record[SCRAPED_TO_DB_KEYS[key]] = scraped_data[key]
 
     return record
@@ -160,6 +184,7 @@ def main(case_info):
     init_driver()
     case_id = case_info['Case Number'][2:] # Case number format is "MP1234"
 
+    print('Navigating to Namus.gov details section...')
     driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/details?nav')
     wait_for_driver_load(By.ID, 'Demographics')
     case_info = scrape_demographics(case_info)
