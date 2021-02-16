@@ -5,7 +5,7 @@ import uuid
 
 def handler(event, context):
     try:
-        case_info = context['message'] # TODO: message from sqs
+        case_info = context['message'] # TODO: handle message from sqs
         case_info = add_additional_info(case_info)
         # TODO: upload_image_to_s3(case_info)
         write_to_db(case_info)
@@ -15,7 +15,6 @@ def handler(event, context):
             'body': case_info
         }
     except Exception as e:
-        pdb.set_trace()
         print(e)
 
         return {

@@ -1,11 +1,15 @@
-from bs4 import BeautifulSoup
-from helpers.selenium import SeleniumScraper
+import boto3
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support import expected_conditions as EC
+import json
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-import pandas as pd
-import getopt, pdb, re, sys, time
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from bs4 import BeautifulSoup
+import pdb, re, time
+
 # CONSTANTS
 CASE_NUMBER_KEY = 'Case Number'
 INFO_COLUMNS = [
@@ -22,28 +26,31 @@ INFO_COLUMNS = [
     'Date Modified'
 ]
 MAX_ROWS_PER_PAGE = 100
-PATH_TO_WEBDRIVER = '/var/task/chromedriver'
-def apply_filters(filters):
-    if 'states' in filters: apply_state_filter(filters['states'])
-    if 'date_operand' in filters: apply_date_filter(filters)
 
-def apply_date_filter(date):
+def apply_filters(last_date, date_operand, states):
+    if states is not None: apply_state_filter(states)
+    apply_date_filter(last_date, date_operand)
+
+def apply_date_filter(date, date_operand):
     print('Adding date filters...')
+    month = date.split('-')[0]
+    day = date.split('-')[1]
+    year = date.split('-')[2]
 
     circumstances_section = driver.find_element_by_id('Circumstances')
     operand_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[0]
-    Select(operand_box).select_by_visible_text(date['date_operand'])
+    Select(operand_box).select_by_visible_text(date_operand)
 
     time.sleep(.5)
 
     month_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[1]
-    Select(month_box).select_by_visible_text(date['month'])
+    Select(month_box).select_by_visible_text(month)
 
     day_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[2]
-    Select(day_box).select_by_visible_text(date['day'])
+    Select(day_box).select_by_visible_text(day)
 
     year_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[3]
-    Select(year_box).select_by_visible_text(date['year'])
+    Select(year_box).select_by_visible_text(year)
 
 def apply_state_filter(states):
     print('Adding selected states to filter...')
@@ -54,31 +61,10 @@ def apply_state_filter(states):
     for label in labels_in_section:
         if (label.text == "State"):
             state_input_box = label.find_element_by_tag_name('input')
-            # add state filter
             for state in states:
                 state_input_box.send_keys(state)
                 state_input_box.send_keys(Keys.ENTER)
-
-def get_info_results():
-    print('Gathering info...')
-
-    # navigate to list view
-    driver.find_element_by_xpath("//i[@class=\"icon-list\"]").click()
-    time.sleep(1.5)
-
-    info_df = pd.DataFrame(columns=INFO_COLUMNS)
-    soup = BeautifulSoup(driver.page_source, 'lxml')
-    rows = soup.find('div', class_='ui-grid-canvas').contents
-
-    for row in rows:
-        if row != ' ':
-            cells = row.find_all('div', class_='ui-grid-cell-contents')
-            cells_text = map(lambda cell: cell.text.strip(), cells)
-            new_info_df = pd.DataFrame([list(cells_text)], columns=INFO_COLUMNS)
-            info_df = info_df.append(new_info_df, ignore_index=True)
     
-    return info_df
-
 def get_page_numbers():
     print('Calculating number of pages...')
     
@@ -89,6 +75,16 @@ def get_page_numbers():
 
     return page_nums
 
+def init_driver():
+    print('Initializing global driver to variable named "driver"')
+    config = ['ignore-certificate-errors', 'incognito', 'headless']
+    options = webdriver.ChromeOptions()
+    for option in config:
+        options.add_argument(f'--{option}')
+
+    global driver
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+
 def next_page():
     print('clicking next page...')
     time.sleep(5)
@@ -98,37 +94,25 @@ def next_page():
     except:
         print('last page completed...')
 
-def parse_args(argv):
-    help_message = """
-    Example usage: namUs.py --states=Utah,Arizona,California
-    Options:
-        --states=:  States flag; accepts a comma-separated list ie.(--states=Arizona,Utah,California)
-        --date=:     Date of Last Contact. Can search greater than or less than a given date
-                    Example:    --date=">=January-5-1986" (sorts greater than the given date)
-                                --date="<=January-5-1986" (sorts less than the given date)
-        -h :        Shows this help Screen; can also use --help
-    """
-    filters = {}
+def process_data_on_page():
+    print('Gathering info...')
 
-    try:
-        opts, args = getopt.getopt(argv,'h',['help', 'states=', 'date='])
-    except getopt.GetoptError:
-        print(help_message)
-        sys.exit(2)
+    # navigate to list view
+    driver.find_element_by_xpath("//i[@class=\"icon-list\"]").click()
+    time.sleep(1.5)
 
-    for opt, arg in opts:
-        if opt in ('-h','--help'):
-            print(help_message)
-            sys.exit()
-        if opt == '--states':
-            filters['states'] = arg.split(',')
-        if opt == '--date':
-            filters['date_operand'] = arg[:2]
-            filters['month'] = arg[2:].split('-')[0]
-            filters['day'] = arg[2:].split('-')[1]
-            filters['year'] = arg[2:].split('-')[2]
+    soup = BeautifulSoup(driver.page_source, 'lxml')
+    rows = soup.find('div', class_='ui-grid-canvas').contents
 
-    return filters
+    for row in rows:
+        if row == ' ': continue
+
+        case_info = {}
+        cells = row.find_all('div', class_='ui-grid-cell-contents')
+        for index, cell in enumerate(cells):
+            case_info[INFO_COLUMNS[index]] = cell.text.strip()
+        
+        send_to_sqs(case_info)
 
 def rows_to_show(num_rows):
     print(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
@@ -144,47 +128,33 @@ def search():
     search_actions[1].click()
     time.sleep(1.5)
 
-def main(argv):
-    filters = parse_args(argv)
+def send_to_sqs(record):
+    message = json.dumps(record)
+    client = boto3.client('sqs')
+    response = client.send_message(
+        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
+        MessageBody=message
+    )
 
-    global driver
-    config = ['no-sandbox', 'disable-dev-shm-usage', 'ignore-certificate-errors', 'incognito', 'headless']
-    options = webdriver.ChromeOptions()
-    for option in config:
-        options.add_argument(f'--{option}')
+def main(last_date, date_operand=">=", states=None):
+    init_driver()
 
-    driver = webdriver.Chrome(PATH_TO_WEBDRIVER, options=options)
+    print('Navigating to namus.gov...')
+    driver.get("https://www.namus.gov/MissingPersons/Search")
 
-    driver.get('http://whatismyip.host/')
-    soup = BeautifulSoup(driver.page_source, 'lxml')
-    return soup.find('p', class_="ipaddress").text
+    apply_filters(last_date, date_operand, states)
+    search()
+    rows_to_show(MAX_ROWS_PER_PAGE)
+    page_nums = get_page_numbers()
 
-    # path = f'./data_files/states_missing_info{time.time()}.infer'
+    try:
+        for page in range(page_nums):
+            print(f'starting page {page}...')
+            process_data_on_page()
+            next_page()
 
-    # print('Navigating to namus.gov...')
-    # driver.get("https://www.namus.gov/MissingPersons/Search")
-
-    # apply_filters(filters)
-    # search()
-
-    # rows_to_show(MAX_ROWS_PER_PAGE)
-    # page_nums = get_page_numbers()
-    # info_df = pd.DataFrame(columns=INFO_COLUMNS)
-
-    # try:
-    #     for page in range(page_nums):
-    #         print(f'starting page {page}...')
-    #         new_df = get_info_results()
-    #         info_df = info_df.append(new_df, ignore_index=True)
-    #         next_page()
-    # except Exception as e:
-    #     print(f'Exception thrown. Saving existing data to pickle: {path}')
-    #     info_df.to_pickle(path)
-    #     driver.quit()
-    #     print(e)
-
-    # print(f'saving data to pickle: {path}')
-    # info_df.to_pickle(path)
-    # driver.quit()
-
-    # print('scraping completed')
+        print('Scraping completed!')
+        driver.quit()
+    except Exception as e:
+        print(f'Exception: {e}')
+        driver.quit()

@@ -199,4 +199,6 @@ def main(case_info):
     case_info = scrape_namus_contact_section(case_info)
     case_info = scrape_investigating_agencies(case_info)
 
+    driver.quit()
+
     return case_info

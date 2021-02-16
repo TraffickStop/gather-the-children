@@ -1,21 +1,16 @@
 import sys
-import namus
+from namus import main as gather_ids
 
 def handler(event, context):
-    error = None
-    status_code = 200
-    ip = None
-
     try:
-        ip = namus.main(['--date=>=February-1-2021'])
+        gather_ids('February-1-2021')
+        return {
+            'statusCode': 200,
+            'body': 'Successfully wrote to SQS',
+        }
     except Exception as e:
-        status_code = 400
-        error = e
         print(e)
-    return {
-        'statusCode': status_code,
-        'body': ip,
-        'error': error
-    }
-
-handler(None, None)
+        return {
+            'statusCode': 400,
+            'error': e
+        }
