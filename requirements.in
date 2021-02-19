@@ -2,6 +2,6 @@
 selenium
 bs4
 pandas
-notebook
 lxml
 webdriver-manager
+boto3

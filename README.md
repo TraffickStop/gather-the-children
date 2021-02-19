@@ -1,7 +1,5 @@
 # Getting Started
 
-## Setting up dependency management with pip, venv, and pip-tools
-
 While in the project directory, create a virtual environment in the env/ folder
 ```
 python -m venv env

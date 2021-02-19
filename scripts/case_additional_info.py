@@ -1,152 +1,204 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-import pandas as pd
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium import webdriver
 import pdb, time
 
 # CONSTANTS
-MISSING_PERSONS_FILE = './data_files/All-Missing-People.infer'
-ADDITIONAL_INFO_COLUMNS = [
-    'Case Number',
-    'Missing Age',
-    'Current Age',
-    'First Name',
-    'Middle Name',
-    'Last Name',
-    'Nickname',
-    'Sex',
-    'Height',
-    'Weight',
-    'Race',
-    'Date of Last Contact',
-    'NamUs Case Created',
-    'Location',
-    'County',
-    'Circumstances of Disappearance',
-    'Hair Color',
-    'Head Hair Description',
-    'Body Hair Description',
-    'Facial Hair Description',
-    'Left Eye Color',
-    'Right Eye Color',
-    'Eye Description'
+SCRAPED_TO_DB_KEYS = {
+    # Demographics Keys
+    'Missing Age': 'missingAge',
+    'Current Age': 'currentAge',
+    'First Name': 'firstName',
+    'Middle Name': 'middleName',
+    'Last Name': 'lastName',
+    'Nickname/Alias': 'nickname',
+    'Sex': 'sex',
+    'Height': 'height',
+    'Weight': 'weight',
+    'Race / Ethnicity': 'race',
+
+    # Circumstance keys
+    'Date of Last Contact': 'dateOfLastContact',
+    'NamUs Case Created': 'namusCaseCreated',
+    'Location': 'location',
+    'County': 'county',
+    'Circumstances of Disappearance': 'circumstancesOfDisappearance',
+
+    # Physical Description Keys
+    'Hair Color': 'hairColor',
+    'Head Hair Description': 'headHairDescription',
+    'Body Hair Description': 'bodyHairDescription',
+    'Facial Hair Description': 'facialHairDescription',
+    'Left Eye Color': 'leftEyeColor',
+    'Right Eye Color': 'rightEyeColor',
+    'Eye Description': 'eyeDescription',
+
+    # Investigating Agency
+    'Agency Name': 'agencyName',
+    'Agency Investigator': 'agencyInvestigator',
+    'Address': 'agencyAddress',
+    'Agency County': 'agencyCounty',
+    'Agency Type': 'agencyType',
+    'Main Phone': 'agencyMainPhone',
+    'General Email': 'agencyGeneralEmail',
+    'Website URL': 'agencyWebsiteURL',
+    'ORI': 'agencyOri',
+    'Jurisdiction': 'agencyJurisdiction',
+    'Agency Case Number': 'agencyCaseNumber',
+    'Date Reported': 'agencyDateReported',
+    'Notes': 'agencyNotes',
+
+    # Contact Info
+    'Namus Contact Name': 'namusContactName',
+    'Namus Phone Number': 'namusPhoneNumber',
+    'Namus Email': 'namusEmail'
+}
+KEYS_NOT_TO_MAP = [
+    'Associated Tribe(s):',
+    'Missing From Tribal Land',
+    'Primary Residence on Tribal Land',
+    'Item',
+    'Description',
+    'Phone',
+    'Secondary Phone',
+    'Email'
 ]
 
-# global variables
-options = webdriver.ChromeOptions()
-options.add_argument('--ignore-certificate-errors')
-options.add_argument('--incognito')
-options.add_argument('--headless')
-driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+def init_driver():
+    print('Initializing global driver to variable named "driver"')
+    config = ['ignore-certificate-errors', 'incognito', 'headless']
+    options = webdriver.ChromeOptions()
+    for option in config:
+        options.add_argument(f'--{option}')
 
-def scrape_demographics(row):
+    global driver
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+
+def scrape_demographics(record):
+    print('Scraping demographics section...')
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     demographics_section = soup.find('div', id='Demographics')
     labels = demographics_section.find_all('span', class_='data-label')
-
-    row_labels = {}
+    scraped_data = {}
 
     for label in labels:
         if (label.text.lower() != 'social security number'):
-            row_labels[label.text.strip()] = label.next_sibling.strip()
+            scraped_data[label.text.strip()] = label.next_sibling.strip()
 
-    row['Missing Age'] = row_labels['Missing Age'] if 'Missing Age' in row_labels else print('Error finding column Missing Age')
-    row['Current Age'] = row_labels['Current Age'] if 'Current Age' in row_labels else print('Error finding column Current Age')
-    row['First Name'] = row_labels['First Name'] if 'First Name' in row_labels else print('Error finding column First Name')
-    row['Middle Name'] = row_labels['Middle Name'] if 'Middle Name' in row_labels else print('Error finding column Middle Name')
-    row['Last Name'] = row_labels['Last Name'] if 'Last Name' in row_labels else print('Error finding column Last Name')
-    row['Nickname'] = row_labels['Nickname/Alias'] if 'Nickname/Alias' in row_labels else print('Error finding column Nickname')
-    row['Sex'] = row_labels['Sex'] if 'Sex' in row_labels else print('Error finding column Sex')
-    row['Height'] = row_labels['Height'] if 'Height' in row_labels else print('Error finding column Height')
-    row['Weight'] = row_labels['Weight'] if 'Weight' in row_labels else print('Error finding column Weight')
-    row['Race'] = row_labels['Race / Ethnicity'] if 'Race / Ethnicity' in row_labels else print('Error finding column Race')
+    return map_scraped_keys_to_db_keys(scraped_data, record)
 
-    return row
+def scrape_circumstances(record):
+    print('Scraping circumstances section...')
 
-def scrape_circumstances(row):
     soup = BeautifulSoup(driver.page_source, 'lxml')
     circumstances_section = soup.find('div', id='Circumstances')
     labels = circumstances_section.find_all('span', class_='data-label')
-    
-    row_labels = {}
+    scraped_data = {}
 
     for label in labels:
         if label.text.strip() == 'Location' or label.text.strip() == 'Circumstances of Disappearance':
-            row_labels[label.text.strip()] = label.next_sibling.next_sibling.text.strip()
+            scraped_data[label.text.strip()] = label.next_sibling.next_sibling.text.strip()
         else:
-            row_labels[label.text.strip()] = label.next_sibling.strip()
+            scraped_data[label.text.strip()] = label.next_sibling.strip()
+
+    return map_scraped_keys_to_db_keys(scraped_data, record)
+
+def scrape_investigating_agencies(record):
+    print('Scraping investigating agencies section...')
+
+    driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
+    wait_for_driver_load(By.CLASS_NAME, 'icon-chevron-up', additional_sec=1)
+
+    soup = BeautifulSoup(driver.page_source, 'lxml')
+    investigating_agencies_section = soup.find('div', id='InvestigatingAgencies')
+    scraped_data = {}
+
+    scraped_data['Agency Name'] = investigating_agencies_section.find('i', class_='icon-chevron-up').find_next_sibling('span', class_='name-inline').text
+
+    if len(investigating_agencies_section.find('case-contact').find_all('h4')) > 0:
+        scraped_data['Agency Investigator'] = investigating_agencies_section.find('case-contact').find_all('h4')[0].text.strip()
+    else:
+        scraped_data['Agency Investigator'] = None
+
+    data_labels = investigating_agencies_section.find_all('span', class_='data-label')
+    for label in data_labels:
+        if label.text.lower() == 'address':
+            scraped_data['Address'] = label.find_next_sibling('span', class_='multi-line').text
+        else:
+            scraped_data[label.text] = label.next_sibling.strip()
     
-    row['Date of Last Contact'] = row_labels['Date of Last Contact'] if 'Date of Last Contact' in row_labels else print('Error finding column Date of Last Contact')
-    row['NamUs Case Created'] = row_labels['NamUs Case Created'] if 'NamUs Case Created' in row_labels else print('Error finding column NamUs Case Created')
-    row['Location'] = row_labels['Location'] if 'Location' in row_labels else print('Error finding column Location')
-    row['County'] = row_labels['County'] if 'County' in row_labels else print('Error finding column County')
-    row['Circumstances of Disappearance'] = row_labels['Circumstances of Disappearance'] if 'Circumstances of Disappearance' in row_labels else print('Error finding column Circumstances of Disappearance')
+    # change generic county key to specific agency county key and remove old key
+    scraped_data['Agency County'] = scraped_data['County']
+    scraped_data.pop('County', None) 
+    
+    return map_scraped_keys_to_db_keys(scraped_data, record)
 
-    return row
+def scrape_namus_contact_section(record):
+    print('Scraping agencies contact section...')
 
-def scrape_physical_description(row):
+    soup = BeautifulSoup(driver.page_source, 'lxml')
+    contact_info_section = soup.find('case-contact-information')
+    scraped_data = {}
+
+    scraped_data['Namus Contact Name'] = contact_info_section.find('span', class_='rsa-contact-name').text
+    scraped_data['Namus Phone Number'] = contact_info_section.find('i', class_='icon-phone').next_sibling.strip() 
+    scraped_data['Namus Email'] = contact_info_section.find('i', class_='icon-mail').next_sibling.strip() 
+
+    return map_scraped_keys_to_db_keys(scraped_data, record)
+
+def scrape_physical_description(record):
+    print('Scraping physical description section...')
+
     soup = BeautifulSoup(driver.page_source, 'lxml')
     physical_description_section = soup.find('div', id='PhysicalDescription')
-    labels = physical_description_section.find_all('span', class_='data-label')
+    data_labels = physical_description_section.find_all('span', class_='data-label')
+    scraped_data = {}
 
-    row_labels = {}
-
-    for label in labels:
+    for label in data_labels:
         if label.text.strip() != 'Hair Color' and label.text.strip() != 'Item' and label.text.strip() != 'Description':
-            row_labels[label.text.strip()] = label.next_sibling.next_sibling.text.strip()
+            scraped_data[label.text.strip()] = label.next_sibling.next_sibling.text.strip()
         else:
-            row_labels[label.text.strip()] = label.next_sibling.strip()
+            scraped_data[label.text.strip()] = label.next_sibling.strip()
 
-    row['Hair Color'] = row_labels['Hair Color'] if 'Hair Color' in row_labels else print('Error finding column Hair Color')
-    row['Head Hair Description'] = row_labels['Head Hair Description'] if 'Head Hair Description' in row_labels else print('Error finding column Head Hair Description')
-    row['Body Hair Description'] = row_labels['Body Hair Description'] if 'Body Hair Description' in row_labels else print('Error finding column Body Hair Description')
-    row['Facial Hair Description'] = row_labels['Facial Hair Description'] if 'Facial Hair Description' in row_labels else print('Error finding column Facial Hair Description')
-    row['Left Eye Color'] = row_labels['Left Eye Color'] if 'Left Eye Color' in row_labels else print('Error finding column Left Eye Color')
-    row['Right Eye Color'] = row_labels['Right Eye Color'] if 'Right Eye Color' in row_labels else print('Error finding column Right Eye Color')
-    row['Eye Description'] = row_labels['Eye Description'] if 'Eye Description' in row_labels else print('Error finding column Eye Description')
-
-    return row
-
-def main():
-    all_cases = pd.read_pickle(MISSING_PERSONS_FILE)
-    case_additional_info = pd.DataFrame(columns=ADDITIONAL_INFO_COLUMNS)
-    path = f'./data_files/case_additional_info{time.time()}.infer'
-
-    for index, row in all_cases.iterrows():
-        if index % 5 == 0: pdb.set_trace() # check after every 5 scrapes
-        try:
-            print(index)
-            case_id = row['Case Number'][2:] # Case number format is "MP1234"
-
-            case_info_row = pd.DataFrame(columns=ADDITIONAL_INFO_COLUMNS).append(pd.Series(dtype="object"), ignore_index=True)
-            case_info_row['Case Number'] = row['Case Number']
-
-            driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/details?nav')
-
-            try:
-                element = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.ID, 'Demographics'))
-                )
-            except Exception as e:
-                print('could not find element after waiting 10 seconds')
-                raise e
-
-            case_info_row = scrape_demographics(case_info_row)
-            case_info_row = scrape_circumstances(case_info_row)
-            case_info_row = scrape_physical_description(case_info_row)
-
-            case_additional_info = case_additional_info.append(case_info_row, ignore_index=True)
-        except Exception as e:
-            print(e)
-            print(index, row)
-            pdb.set_trace()
-            case_additional_info.to_pickle(path)
+    return map_scraped_keys_to_db_keys(scraped_data, record)
     
-    pdb.set_trace()
-    case_additional_info.to_pickle(path)
+def map_scraped_keys_to_db_keys(scraped_data, record):
+    for key in scraped_data:
+        if key in KEYS_NOT_TO_MAP: continue
+        record[SCRAPED_TO_DB_KEYS[key]] = scraped_data[key]
 
-if __name__ == '__main__':
-    main()
+    return record
+
+def wait_for_driver_load(by_identifier, identifier, additional_sec=0):
+    try:
+        element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((by_identifier, identifier))
+        )
+        time.sleep(additional_sec)
+    except Exception as e:
+        print(f'Could not find {identifier} element after waiting 10 seconds.')
+        raise e
+
+def main(case_info):
+    init_driver()
+    case_id = case_info['caseNumber'][2:] # Case number format is "MP1234"
+
+    print('Navigating to Namus.gov details section...')
+    driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/details?nav')
+    wait_for_driver_load(By.ID, 'Demographics')
+    case_info = scrape_demographics(case_info)
+    case_info = scrape_circumstances(case_info)
+    case_info = scrape_physical_description(case_info)
+
+    driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/contacts?nav')
+    wait_for_driver_load(By.CLASS_NAME, 'rsa-contact', additional_sec=0.5)
+    case_info = scrape_namus_contact_section(case_info)
+    case_info = scrape_investigating_agencies(case_info)
+
+    driver.quit()
+
+    return case_info
