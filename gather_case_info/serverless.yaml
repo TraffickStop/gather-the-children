@@ -1,0 +1,16 @@
+# Deploy lambda function
+service: gather-case-info-lambda
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: us-east-1
+  timeout: 900
+
+
+functions:
+  hello:
+    handler: case_info_handler.handler
+    layers:
+      - ${cf:namus-layer-dev.SrapingPackagesLayerExport}
+      - ${cf:namus-layer-dev.ChromedriverLayerExport
