@@ -25,6 +25,19 @@ INFO_COLUMNS = [
     'Race',
     'Date Modified'
 ]
+SCRAPED_TO_DB_KEYS = {
+    'Case Number': 'caseNumber',
+    'DLC': 'dlc',
+    'Last Name': 'lastName',
+    'First Name': 'firstName',
+    'Missing Age': 'missingAge',
+    'City': 'city',
+    'County': 'county',
+    'State': 'state',
+    'Sex': 'sex',
+    'Race': 'race',
+    'Date Modified': 'dateModified'
+}
 MAX_ROWS_PER_PAGE = 100
 
 def apply_filters(last_date, date_operand, states):
@@ -114,7 +127,12 @@ def process_data_on_page():
         for index, cell in enumerate(cells):
             case_info[INFO_COLUMNS[index]] = cell.text.strip()
         
-        send_to_sqs(case_info)
+        message = {}
+        for key in case_info:
+            message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
+            
+        send_to_sqs(message)
+        break
 
 def rows_to_show(num_rows):
     print(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
@@ -153,6 +171,7 @@ def main(last_date, date_operand=">=", states=None):
         for page in range(page_nums):
             print(f'starting page {page}...')
             process_data_on_page()
+            return
             next_page()
 
         print('Scraping completed!')

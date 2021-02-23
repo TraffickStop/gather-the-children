@@ -1,18 +1,20 @@
 import boto3
-from case_info import main as add_additional_info
+from case_additional_info import main as add_additional_info
 import pdb
 import uuid
 
 def handler(event, context):
+    print(event["Records"])
     try:
-        case_info = context['message'] # TODO: handle message from sqs
-        case_info = add_additional_info(case_info)
-        # TODO: upload_image_to_s3(case_info)
-        write_to_db(case_info)
+        for record in event['Records']:
+            case_info = record["body"]
+            case_info = add_additional_info(case_info)
+            # TODO: upload_image_to_s3(case_info)
+            write_to_db(case_info)
 
         return {
             'statusCode': 200,
-            'body': case_info
+            'body': "successfully uploaded data to dynamodb and s3"
         }
     except Exception as e:
         print(e)

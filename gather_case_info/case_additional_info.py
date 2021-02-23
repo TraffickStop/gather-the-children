@@ -187,6 +187,7 @@ def wait_for_driver_load(by_identifier, identifier, additional_sec=0):
 
 def main(case_info):
     init_driver()
+    print(case_info)
     case_id = case_info['caseNumber'][2:] # Case number format is "MP1234"
 
     print('Navigating to Namus.gov details section...')
