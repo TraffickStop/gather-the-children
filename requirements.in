@@ -1,7 +1,6 @@
 # requirements.in
 selenium
 bs4
-pandas
 lxml
 webdriver-manager
 boto3

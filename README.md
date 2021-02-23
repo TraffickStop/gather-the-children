@@ -2,7 +2,7 @@
 
 While in the project directory, create a virtual environment in the env/ folder
 ```
-python -m venv env
+python -m venv python
 ```
 
 Next, activate the environment.
@@ -14,7 +14,7 @@ env\Scripts\activate.bat
 
 on MacOS, run:
 ```
-source env/bin/activate
+source python/bin/activate
 ```
 
 To deactivate your environment on both Windows or Mac, run:
