@@ -9,7 +9,7 @@ def handler(event, context):
         case_info = add_additional_info(case_info)
         # TODO: upload_image_to_s3(case_info)
         write_to_db(case_info)
-        
+
         return {
             'statusCode': 200,
             'body': case_info

@@ -1,11 +1,11 @@
 import boto3
 from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 import json
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 import pdb, re, time
@@ -68,7 +68,7 @@ def apply_state_filter(states):
 def get_page_numbers():
     print('Calculating number of pages...')
     
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     page_num_info = soup.find('nav', {'aria-label': 'Page Selection'}).find('span').text
     index_of_slash = re.search('/', page_num_info).span()[1]
     page_nums = int(page_num_info[index_of_slash:].strip())
@@ -77,13 +77,15 @@ def get_page_numbers():
 
 def init_driver():
     print('Initializing global driver to variable named "driver"')
-    config = ['ignore-certificate-errors', 'incognito', 'headless']
-    options = webdriver.ChromeOptions()
-    for option in config:
-        options.add_argument(f'--{option}')
+    options = Options()
+    options.binary_location = '/opt/headless-chromium'
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--single-process')
+    options.add_argument('--disable-dev-shm-usage')
 
     global driver
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    driver = webdriver.Chrome('/opt/chromedriver',chrome_options=options)
 
 def next_page():
     print('clicking next page...')
@@ -101,7 +103,7 @@ def process_data_on_page():
     driver.find_element_by_xpath("//i[@class=\"icon-list\"]").click()
     time.sleep(1.5)
 
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     rows = soup.find('div', class_='ui-grid-canvas').contents
 
     for row in rows:

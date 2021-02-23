@@ -4,6 +4,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 import pdb, time
 
 # CONSTANTS
@@ -69,13 +70,14 @@ KEYS_NOT_TO_MAP = [
 
 def init_driver():
     print('Initializing global driver to variable named "driver"')
-    config = ['ignore-certificate-errors', 'incognito', 'headless']
-    options = webdriver.ChromeOptions()
-    for option in config:
-        options.add_argument(f'--{option}')
+    options = Options()
+    options.binary_location = '/opt/headless-chromium'
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--single-process')
+    options.add_argument('--disable-dev-shm-usage')
 
-    global driver
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    driver = webdriver.Chrome('/opt/chromedriver',chrome_options=options)
 
 def scrape_demographics(record):
     print('Scraping demographics section...')

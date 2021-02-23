@@ -161,7 +161,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/gather-case-numbers-lambda/dev/1614103522414-2021-02-23T18:05:22.414Z/gather-case-numbers-lambda.zip"
+          "S3Key": "serverless/gather-case-numbers-lambda/dev/1614103956042-2021-02-23T18:12:36.042Z/gather-case-numbers-lambda.zip"
         },
         "Handler": "namus_handler.handler",
         "Runtime": "python3.6",
@@ -183,14 +183,14 @@
         "HelloLogGroup"
       ]
     },
-    "HelloLambdaVersionSX7qWR4BK8UJJ6iIysPtdWmNaKCa6hd4oNZs5rkxg": {
+    "HelloLambdaVersion9LeMJlYGb7eevRMizKgR5yLti43WkYZFC6tYy5LEwM": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "HelloLambdaFunction"
         },
-        "CodeSha256": "kkGFMbXKcs3g/P6VJK8MqeuX6baIqJYgudcDGo3c75I="
+        "CodeSha256": "7jQ037Mr4pMJueXQzTQC00CTx1JKRPTlF8zPbP7kbNg="
       }
     }
   },
@@ -203,7 +203,7 @@
     "HelloLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "HelloLambdaVersionSX7qWR4BK8UJJ6iIysPtdWmNaKCa6hd4oNZs5rkxg"
+        "Ref": "HelloLambdaVersion9LeMJlYGb7eevRMizKgR5yLti43WkYZFC6tYy5LEwM"
       }
     }
   }
