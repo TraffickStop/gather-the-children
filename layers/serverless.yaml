@@ -1,0 +1,28 @@
+# define lambda layers
+service: namus-layer
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-east-1
+  timeout: 900
+
+layers:
+  scrapingPackages:
+    path: scraping_packages
+    description: dependencies for scraping
+  chromedriver2:
+    path: chromedriver
+    description: chrome driver layer
+resources:
+  Outputs:
+    SrapingPackagesLayerExport:
+        Value:
+          Ref: ScrapingPackagesLambdaLayer
+        Export:
+          Name: ScrapingPackagesLambdaLayer
+    Chromedriver2LayerExport:
+       Value:
+         Ref: Chromedriver2LambdaLayer
+       Export:
+         Name: Chromedriver2LambdaLayer

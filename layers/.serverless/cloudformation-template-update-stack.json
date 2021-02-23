@@ -1,0 +1,152 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ServerlessDeploymentBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ServerlessDeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Chromedriver2LambdaLayer": {
+      "Type": "AWS::Lambda::LayerVersion",
+      "Properties": {
+        "Content": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/chromedriver2.zip"
+        },
+        "LayerName": "chromedriver2",
+        "Description": "chrome driver layer"
+      }
+    },
+    "ScrapingPackagesLambdaLayer": {
+      "Type": "AWS::Lambda::LayerVersion",
+      "Properties": {
+        "Content": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/scrapingPackages.zip"
+        },
+        "LayerName": "scrapingPackages",
+        "Description": "dependencies for scraping"
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      }
+    },
+    "Chromedriver2LambdaLayerQualifiedArn": {
+      "Description": "Current Lambda layer version",
+      "Value": {
+        "Ref": "Chromedriver2LambdaLayer"
+      }
+    },
+    "Chromedriver2LambdaLayerHash": {
+      "Description": "Current Lambda layer hash",
+      "Value": "b8f8398d9e725711b8f7be96497e3313205670d6"
+    },
+    "Chromedriver2LambdaLayerS3Key": {
+      "Description": "Current Lambda layer S3Key",
+      "Value": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/chromedriver2.zip"
+    },
+    "ScrapingPackagesLambdaLayerQualifiedArn": {
+      "Description": "Current Lambda layer version",
+      "Value": {
+        "Ref": "ScrapingPackagesLambdaLayer"
+      }
+    },
+    "ScrapingPackagesLambdaLayerHash": {
+      "Description": "Current Lambda layer hash",
+      "Value": "c841ac6f8c6b74a76b0d306b807c2aaa746c053d"
+    },
+    "ScrapingPackagesLambdaLayerS3Key": {
+      "Description": "Current Lambda layer S3Key",
+      "Value": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/scrapingPackages.zip"
+    },
+    "SrapingPackagesLayerExport": {
+      "Value": {
+        "Ref": "ScrapingPackagesLambdaLayer"
+      },
+      "Export": {
+        "Name": "ScrapingPackagesLambdaLayer"
+      }
+    },
+    "Chromedriver2LayerExport": {
+      "Value": {
+        "Ref": "Chromedriver2LambdaLayer"
+      },
+      "Export": {
+        "Name": "Chromedriver2LambdaLayer"
+      }
+    }
+  }
+}

@@ -3,7 +3,7 @@ service: gather-case-numbers-lambda
 
 provider:
   name: aws
-  runtime: python3.8
+  runtime: python3.6
   region: us-east-1
   timeout: 900
 
@@ -13,4 +13,4 @@ functions:
     handler: namus_handler.handler
     layers:
       - ${cf:namus-layer-dev.SrapingPackagesLayerExport}
-      - ${cf:namus-layer-dev.ChromedriverLayerExport}
+      - ${cf:namus-layer-dev.Chromedriver2LayerExport}
