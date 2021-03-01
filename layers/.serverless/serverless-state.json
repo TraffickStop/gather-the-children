@@ -85,19 +85,6 @@
               }
             }
           },
-          "Chromedriver2LambdaLayer": {
-            "Type": "AWS::Lambda::LayerVersion",
-            "Properties": {
-              "Content": {
-                "S3Bucket": {
-                  "Ref": "ServerlessDeploymentBucket"
-                },
-                "S3Key": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/chromedriver2.zip"
-              },
-              "LayerName": "chromedriver2",
-              "Description": "chrome driver layer"
-            }
-          },
           "ScrapingPackagesLambdaLayer": {
             "Type": "AWS::Lambda::LayerVersion",
             "Properties": {
@@ -110,6 +97,19 @@
               "LayerName": "scrapingPackages",
               "Description": "dependencies for scraping"
             }
+          },
+          "Chromedriver2LambdaLayer": {
+            "Type": "AWS::Lambda::LayerVersion",
+            "Properties": {
+              "Content": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/chromedriver2.zip"
+              },
+              "LayerName": "chromedriver2",
+              "Description": "chrome driver layer"
+            }
           }
         },
         "Outputs": {
@@ -117,20 +117,6 @@
             "Value": {
               "Ref": "ServerlessDeploymentBucket"
             }
-          },
-          "Chromedriver2LambdaLayerQualifiedArn": {
-            "Description": "Current Lambda layer version",
-            "Value": {
-              "Ref": "Chromedriver2LambdaLayer"
-            }
-          },
-          "Chromedriver2LambdaLayerHash": {
-            "Description": "Current Lambda layer hash",
-            "Value": "b8f8398d9e725711b8f7be96497e3313205670d6"
-          },
-          "Chromedriver2LambdaLayerS3Key": {
-            "Description": "Current Lambda layer S3Key",
-            "Value": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/chromedriver2.zip"
           },
           "ScrapingPackagesLambdaLayerQualifiedArn": {
             "Description": "Current Lambda layer version",
@@ -145,6 +131,20 @@
           "ScrapingPackagesLambdaLayerS3Key": {
             "Description": "Current Lambda layer S3Key",
             "Value": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/scrapingPackages.zip"
+          },
+          "Chromedriver2LambdaLayerQualifiedArn": {
+            "Description": "Current Lambda layer version",
+            "Value": {
+              "Ref": "Chromedriver2LambdaLayer"
+            }
+          },
+          "Chromedriver2LambdaLayerHash": {
+            "Description": "Current Lambda layer hash",
+            "Value": "b8f8398d9e725711b8f7be96497e3313205670d6"
+          },
+          "Chromedriver2LambdaLayerS3Key": {
+            "Description": "Current Lambda layer S3Key",
+            "Value": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/chromedriver2.zip"
           },
           "SrapingPackagesLayerExport": {
             "Value": {
@@ -278,14 +278,16 @@
         "description": "dependencies for scraping",
         "package": {
           "artifact": "/Users/spencerfitzgerald/school/gather-the-children/layers/.serverless/scrapingPackages.zip"
-        }
+        },
+        "artifactAlreadyUploaded": true
       },
       "chromedriver2": {
         "path": "chromedriver",
         "description": "chrome driver layer",
         "package": {
           "artifact": "/Users/spencerfitzgerald/school/gather-the-children/layers/.serverless/chromedriver2.zip"
-        }
+        },
+        "artifactAlreadyUploaded": true
       }
     },
     "initialServerlessConfig": {
@@ -305,7 +307,7 @@
     "isDashboardMonitoringPreconfigured": false
   },
   "package": {
-    "artifactDirectoryName": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z",
+    "artifactDirectoryName": "serverless/namus-layer/dev/1614485814161-2021-02-28T04:16:54.161Z",
     "artifact": ""
   }
 }

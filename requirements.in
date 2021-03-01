@@ -4,3 +4,4 @@ bs4
 lxml
 webdriver-manager
 boto3
+requests
