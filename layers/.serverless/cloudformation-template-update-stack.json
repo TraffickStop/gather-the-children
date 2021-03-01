@@ -78,7 +78,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/scrapingPackages.zip"
+          "S3Key": "serverless/namus-layer/dev/1614612207629-2021-03-01T15:23:27.629Z/scrapingPackages.zip"
         },
         "LayerName": "scrapingPackages",
         "Description": "dependencies for scraping"
@@ -112,11 +112,11 @@
     },
     "ScrapingPackagesLambdaLayerHash": {
       "Description": "Current Lambda layer hash",
-      "Value": "c841ac6f8c6b74a76b0d306b807c2aaa746c053d"
+      "Value": "7af9f3fb4fb924c0c0640dd5096fa860108543bd"
     },
     "ScrapingPackagesLambdaLayerS3Key": {
       "Description": "Current Lambda layer S3Key",
-      "Value": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/scrapingPackages.zip"
+      "Value": "serverless/namus-layer/dev/1614612207629-2021-03-01T15:23:27.629Z/scrapingPackages.zip"
     },
     "Chromedriver2LambdaLayerQualifiedArn": {
       "Description": "Current Lambda layer version",
