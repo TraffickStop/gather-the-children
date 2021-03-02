@@ -2,3 +2,4 @@
 .python-version
 site-packages
 env/
+__pycache__
