@@ -3,8 +3,6 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 import pdb, time
 
 # CONSTANTS
@@ -68,21 +66,10 @@ KEYS_NOT_TO_MAP = [
     'Email'
 ]
 
-def init_driver():
-    print('Initializing global driver to variable named "driver"')
-    options = Options()
-    options.binary_location = '/opt/headless-chromium'
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--single-process')
-    options.add_argument('--disable-dev-shm-usage')
-
-    driver = webdriver.Chrome('/opt/chromedriver',chrome_options=options)
-
-def scrape_demographics(record):
+def scrape_demographics(record, driver):
     print('Scraping demographics section...')
 
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     demographics_section = soup.find('div', id='Demographics')
     labels = demographics_section.find_all('span', class_='data-label')
     scraped_data = {}
@@ -93,10 +80,10 @@ def scrape_demographics(record):
 
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
-def scrape_circumstances(record):
+def scrape_circumstances(record, driver):
     print('Scraping circumstances section...')
 
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     circumstances_section = soup.find('div', id='Circumstances')
     labels = circumstances_section.find_all('span', class_='data-label')
     scraped_data = {}
@@ -109,13 +96,13 @@ def scrape_circumstances(record):
 
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
-def scrape_investigating_agencies(record):
+def scrape_investigating_agencies(record, driver):
     print('Scraping investigating agencies section...')
 
     driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
-    wait_for_driver_load(By.CLASS_NAME, 'icon-chevron-up', additional_sec=1)
+    wait_for_driver_load(By.CLASS_NAME, 'icon-chevron-up', driver, additional_sec=1)
 
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     investigating_agencies_section = soup.find('div', id='InvestigatingAgencies')
     scraped_data = {}
 
@@ -139,10 +126,10 @@ def scrape_investigating_agencies(record):
     
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
-def scrape_namus_contact_section(record):
+def scrape_namus_contact_section(record, driver):
     print('Scraping agencies contact section...')
 
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     contact_info_section = soup.find('case-contact-information')
     scraped_data = {}
 
@@ -152,10 +139,10 @@ def scrape_namus_contact_section(record):
 
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
-def scrape_physical_description(record):
+def scrape_physical_description(record, driver):
     print('Scraping physical description section...')
 
-    soup = BeautifulSoup(driver.page_source, 'lxml')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     physical_description_section = soup.find('div', id='PhysicalDescription')
     data_labels = physical_description_section.find_all('span', class_='data-label')
     scraped_data = {}
@@ -175,7 +162,7 @@ def map_scraped_keys_to_db_keys(scraped_data, record):
 
     return record
 
-def wait_for_driver_load(by_identifier, identifier, additional_sec=0):
+def wait_for_driver_load(by_identifier, identifier, driver, additional_sec=0):
     try:
         element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((by_identifier, identifier))
@@ -185,23 +172,19 @@ def wait_for_driver_load(by_identifier, identifier, additional_sec=0):
         print(f'Could not find {identifier} element after waiting 10 seconds.')
         raise e
 
-def main(case_info):
-    init_driver()
-    print(case_info)
-    case_id = case_info['caseNumber'][2:] # Case number format is "MP1234"
+def main(case_info, driver):
+    case_id = case_info['caseNumber'][2:]
 
     print('Navigating to Namus.gov details section...')
     driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/details?nav')
-    wait_for_driver_load(By.ID, 'Demographics')
-    case_info = scrape_demographics(case_info)
-    case_info = scrape_circumstances(case_info)
-    case_info = scrape_physical_description(case_info)
+    wait_for_driver_load(By.ID, 'Demographics', driver)
+    case_info = scrape_demographics(case_info, driver)
+    case_info = scrape_circumstances(case_info, driver)
+    case_info = scrape_physical_description(case_info, driver)
 
     driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/contacts?nav')
-    wait_for_driver_load(By.CLASS_NAME, 'rsa-contact', additional_sec=0.5)
-    case_info = scrape_namus_contact_section(case_info)
-    case_info = scrape_investigating_agencies(case_info)
-
-    driver.quit()
+    wait_for_driver_load(By.CLASS_NAME, 'rsa-contact', driver, additional_sec=0.5)
+    case_info = scrape_namus_contact_section(case_info, driver)
+    case_info = scrape_investigating_agencies(case_info, driver)
 
     return case_info

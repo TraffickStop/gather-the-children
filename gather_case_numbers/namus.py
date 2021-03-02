@@ -10,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 import pdb, re, time
 
+
 # CONSTANTS
 CASE_NUMBER_KEY = 'Case Number'
 INFO_COLUMNS = [
@@ -40,30 +41,63 @@ SCRAPED_TO_DB_KEYS = {
 }
 MAX_ROWS_PER_PAGE = 100
 
-def apply_filters(last_date, date_operand, states):
+def apply_filters(gt_date=None, lt_date=None, states=None):
     if states is not None: apply_state_filter(states)
-    apply_date_filter(last_date, date_operand)
+    apply_date_filter(gt_date=gt_date, lt_date=lt_date)
 
-def apply_date_filter(date, date_operand):
-    print('Adding date filters...')
-    month = date.split('-')[0]
-    day = date.split('-')[1]
-    year = date.split('-')[2]
+def apply_date_filter(gt_date=None, lt_date=None):
+    if gt_date == None and lt_date == None:
+        raise "must select a date"
+    elif gt_date == None:
+        date_operand = "<="
+        operand_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[1]/select')
+        Select(operand_box).select_by_visible_text(date_operand)
 
-    circumstances_section = driver.find_element_by_id('Circumstances')
-    operand_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[0]
-    Select(operand_box).select_by_visible_text(date_operand)
+        month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[1]')
+        Select(month_box).select_by_visible_text(lt_date.split('-')[0])
 
-    time.sleep(.5)
+        day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[2]')
+        Select(day_box).select_by_visible_text(lt_date.split('-')[1])
 
-    month_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[1]
-    Select(month_box).select_by_visible_text(month)
+        year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/years-input/select')
+        Select(year_box).select_by_visible_text(lt_date.split('-')[2])
+    elif lt_date == None:
+        date_operand = ">="
+        operand_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[1]/select')
+        Select(operand_box).select_by_visible_text(date_operand)
 
-    day_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[2]
-    Select(day_box).select_by_visible_text(day)
+        month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div/date-input/div/select[1]')
+        Select(month_box).select_by_visible_text(gt_date.split('-')[0])
 
-    year_box = circumstances_section.find_elements_by_tag_name('date-range-input')[1].find_elements_by_tag_name('select')[3]
-    Select(year_box).select_by_visible_text(year)
+        day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div/date-input/div/select[2]')
+        Select(day_box).select_by_visible_text(gt_date.split('-')[1])
+
+        year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div/date-input/div/years-input/select')
+        Select(year_box).select_by_visible_text(gt_date.split('-')[2])
+    else:
+        date_operand = "Between"
+        operand_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[1]/select')
+        Select(operand_box).select_by_visible_text(date_operand)
+
+        month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[1]')
+        Select(month_box).select_by_visible_text(gt_date.split('-')[0])
+
+        day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[2]')
+        Select(day_box).select_by_visible_text(gt_date.split('-')[1])
+
+        year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/years-input/select')
+        Select(year_box).select_by_visible_text(gt_date.split('-')[2])
+
+        month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[2]/date-input/div/select[1]')
+        Select(month_box).select_by_visible_text(lt_date.split('-')[0])
+
+        day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[2]/date-input/div/select[2]')
+        Select(day_box).select_by_visible_text(lt_date.split('-')[1])
+
+        year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[2]/date-input/div/years-input/select')
+        Select(year_box).select_by_visible_text(lt_date.split('-')[2])
+
+
 
 def apply_state_filter(states):
     print('Adding selected states to filter...')
@@ -98,14 +132,14 @@ def init_driver():
     options.add_argument('--disable-dev-shm-usage')
 
     global driver
-    driver = webdriver.Chrome('/opt/chromedriver',chrome_options=options)
+    driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
 
 def next_page():
     print('clicking next page...')
-    time.sleep(5)
 
     try:
         driver.find_element_by_xpath("//i[@class=\"icon-triangle-right\"]").click()
+        time.sleep(5)
     except:
         print('last page completed...')
 
@@ -132,14 +166,13 @@ def process_data_on_page():
             message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
             
         send_to_sqs(message)
-        break
 
 def rows_to_show(num_rows):
     print(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
 
-    results_selection_dropdown = driver.find_element_by_xpath("//label/span[contains(text(),'Results')]/following-sibling::select")
+    time.sleep(2)
+    results_selection_dropdown = driver.find_element_by_xpath('//*[@id="visitor"]/div[1]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[3]/search-results-pager/ng-include/div/div/div/label/select')
     Select(results_selection_dropdown).select_by_value(f'{num_rows}')
-    time.sleep(1.5)
 
 def search():
     print('Searching...')
@@ -156,13 +189,13 @@ def send_to_sqs(record):
         MessageBody=message
     )
 
-def main(last_date, date_operand=">=", states=None):
+def main(gt_date=None, lt_date=None, states=None):
     init_driver()
 
     print('Navigating to namus.gov...')
     driver.get("https://www.namus.gov/MissingPersons/Search")
 
-    apply_filters(last_date, date_operand, states)
+    apply_filters(gt_date=gt_date, lt_date=lt_date, states=states)
     search()
     rows_to_show(MAX_ROWS_PER_PAGE)
     page_nums = get_page_numbers()
@@ -171,7 +204,6 @@ def main(last_date, date_operand=">=", states=None):
         for page in range(page_nums):
             print(f'starting page {page}...')
             process_data_on_page()
-            return
             next_page()
 
         print('Scraping completed!')
