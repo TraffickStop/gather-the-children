@@ -12,6 +12,7 @@ def handler(event, context):
     try:
         body = ""
         driver = init_driver()
+        print('Number of messages in batch: ', len(event['Records']))
         for record in event['Records']:
             try:
                 case_info = record["body"]
@@ -27,6 +28,7 @@ def handler(event, context):
                 body = body + f'Successfully uploaded photo and wrote to DB for {case_info["caseNumber"]}\n'
             except Exception as e:
                 print("Exception:", e)
+                body = body + f'Exception thrown for {case_info["caseNumber"]}: {e}\n'
                 continue
 
         driver.quit()
@@ -55,6 +57,7 @@ def init_driver():
     options.add_argument('--disable-dev-shm-usage')
 
     driver = webdriver.Chrome('/opt/chromedriver',chrome_options=options)
+    print('Driver initialized...')
     return driver
 
 def write_to_db_and_s3(record, image):
@@ -70,4 +73,3 @@ def write_to_db_and_s3(record, image):
     # Upload at the same time to avoid one working without the other
     table.put_item(Item=record)
     bucket.upload_fileobj(image, record['caseNumber']+'.jpg')
-    
