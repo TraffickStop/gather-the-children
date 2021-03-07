@@ -1,11 +1,6 @@
 import boto3
 import json
 import pdb
-import logging
-import os
-
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-logging.basicConfig(level=LOGLEVEL)
 
 def receive_message():
     client = boto3.client('sqs')
@@ -39,8 +34,8 @@ while 'Messages' in response:
         if res1['ResponseMetadata']['HTTPStatusCode'] == 200:
             res2 = delete_sqs_message(message)
             if res2['ResponseMetadata']['HTTPStatusCode'] != 200:
-                logging.error("couldn't delete", message)
+                print("couldn't delete", message)
             else:
-                logging.info("Successfully sent to active queue and deleted from dead queue", message)
+                print("Successfully sent to active queue and deleted from dead queue", message)
         elif res1['ResponseMetadata']['HTTPStatusCode'] != 200:
-            logging.error("couldn't send message", message)
+            print("couldn't send message", message)

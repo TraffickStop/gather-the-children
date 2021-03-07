@@ -1,10 +1,5 @@
 import sys
 from namus import main as gather_ids
-import logging
-import os
-
-logger = logging.getLogger()
-logger.setLevel(logging.getLevelName(os.environ.get("LOGLEVEL", "INFO").upper()))
 
 def handler(event, context):
     try:
@@ -14,7 +9,7 @@ def handler(event, context):
             'body': 'Successfully wrote to SQS',
         }
     except Exception as e:
-        logger.error(e)
+        print(e)
         return {
             'statusCode': 400,
             'error': e
