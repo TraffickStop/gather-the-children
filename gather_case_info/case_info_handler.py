@@ -11,7 +11,6 @@ import json
 
 def handler(event, context):
     try:
-        send_to_dead_queue(event['Records'][0])
         body = ""
         driver = init_driver()
         print('Number of messages in batch: ', len(event['Records']))
