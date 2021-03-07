@@ -7,9 +7,11 @@ import ast
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import json
 
 def handler(event, context):
     try:
+        send_to_dead_queue(event['Records'][0])
         body = ""
         driver = init_driver()
         print('Number of messages in batch: ', len(event['Records']))
@@ -19,16 +21,23 @@ def handler(event, context):
                 if type(case_info) == type(''): case_info = ast.literal_eval(case_info)
 
                 img_response = upload_image_to_s3(case_info["caseNumber"][2:], record, driver)
-                if  img_response == "deleted message":
+                if img_response == "deleted message":
                     body = body + f'No photo uploaded for {case_info["caseNumber"]}\n'
+                    remove_from_queue(record)
                     continue
     
                 case_info = add_additional_info(case_info, driver)
+
                 write_to_db_and_s3(case_info, img_response)
                 body = body + f'Successfully uploaded photo and wrote to DB for {case_info["caseNumber"]}\n'
+
+                remove_from_queue(record)
             except Exception as e:
                 print("Exception:", e)
                 body = body + f'Exception thrown for {case_info["caseNumber"]}: {e}\n'
+                
+                remove_from_queue(record)
+                send_to_dead_queue(record)
                 continue
 
         driver.quit()
@@ -56,9 +65,26 @@ def init_driver():
     options.add_argument('--single-process')
     options.add_argument('--disable-dev-shm-usage')
 
-    driver = webdriver.Chrome('/opt/chromedriver',chrome_options=options)
+    driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
     print('Driver initialized...')
     return driver
+
+def remove_from_queue(message):
+    print("removing from queue")
+    client = boto3.client('sqs')
+    response = client.delete_message(
+        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
+        ReceiptHandle=message["receiptHandle"]
+    )
+
+def send_to_dead_queue(message):
+    print("sending to dead queue")
+    body = json.dumps(message['body'])
+    client = boto3.client('sqs')
+    response = client.send_message(
+        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers-dead-letter-queue',
+        MessageBody=body
+    )
 
 def write_to_db_and_s3(record, image):
     dynamodb = boto3.resource('dynamodb')
