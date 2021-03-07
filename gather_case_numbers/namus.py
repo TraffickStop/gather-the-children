@@ -9,7 +9,11 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 import pdb, re, time
+import logging
+import os
 
+LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+logging.basicConfig(level=LOGLEVEL)
 
 # CONSTANTS
 CASE_NUMBER_KEY = 'Case Number'
@@ -43,12 +47,12 @@ MAX_ROWS_PER_PAGE = 100
 
 def apply_filters(gt_date=None, lt_date=None, states=None):
     time.sleep(2)
-    print("Adding filters")
+    logging.debug("Adding filters")
     if states is not None: apply_state_filter(states)
     apply_date_filter(gt_date=gt_date, lt_date=lt_date)
 
 def apply_date_filter(gt_date=None, lt_date=None):
-    print('Setting date range...')
+    logging.debug('Setting date range...')
     if gt_date == None and lt_date == None:
         raise "must select a date"
     elif gt_date == None:
@@ -103,7 +107,7 @@ def apply_date_filter(gt_date=None, lt_date=None):
 
 
 def apply_state_filter(states):
-    print('Adding selected states to filter...')
+    logging.debug('Adding selected states to filter...')
 
     circumstances_section = driver.find_element_by_id('Circumstances')
     labels_in_section = circumstances_section.find_elements_by_tag_name('label')
@@ -116,7 +120,7 @@ def apply_state_filter(states):
                 state_input_box.send_keys(Keys.ENTER)
     
 def get_page_numbers():
-    print('Calculating number of pages...')
+    logging.debug('Calculating number of pages...')
     time.sleep(2)
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -124,11 +128,11 @@ def get_page_numbers():
     index_of_slash = re.search('/', page_num_info).span()[1]
     page_nums = int(page_num_info[index_of_slash:].strip())
 
-    print(f'Calculated {page_nums} pages')
+    logging.debug(f'Calculated {page_nums} pages')
     return page_nums
 
 def init_driver():
-    print('Initializing global driver to variable named "driver"')
+    logging.debug('Initializing global driver to variable named "driver"')
     options = Options()
     options.binary_location = '/opt/headless-chromium'
     options.add_argument('--headless')
@@ -141,13 +145,13 @@ def init_driver():
     driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
 
 def next_page():
-    print('clicking next page...')
+    logging.debug('clicking next page...')
 
     try:
         driver.find_element_by_xpath("//i[@class=\"icon-triangle-right\"]").click()
         time.sleep(2)
     except:
-        print('last page completed...')
+        logging.info('last page completed...')
 
 def process_data_on_page():
     # navigate to list view
@@ -169,18 +173,18 @@ def process_data_on_page():
         for key in case_info:
             message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
         
-        print("Collected data for row:", message)
+        logging.info("Collected data for case number:", message['caseNumber'])
         send_to_sqs(message)
 
 def rows_to_show(num_rows):
-    print(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
+    logging.debug(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
 
     time.sleep(2)
     results_selection_dropdown = driver.find_element_by_xpath('//*[@id="visitor"]/div[1]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[3]/search-results-pager/ng-include/div/div/div/label/select')
     Select(results_selection_dropdown).select_by_value(f'{num_rows}')
 
 def search():
-    print('Searching...')
+    logging.debug('Searching...')
     search_results_section = driver.find_element_by_class_name('search-criteria-container')
     search_actions = search_results_section.find_element_by_class_name('search-criteria-container-actions').find_elements_by_tag_name('input')
     search_actions[1].click()
@@ -197,7 +201,7 @@ def send_to_sqs(record):
 def main(gt_date=None, lt_date=None, states=None):
     init_driver()
 
-    print('Navigating to namus.gov...')
+    logging.debug('Navigating to namus.gov...')
     driver.get("https://www.namus.gov/MissingPersons/Search")
 
     apply_filters(gt_date=gt_date, lt_date=lt_date, states=states)
@@ -207,12 +211,12 @@ def main(gt_date=None, lt_date=None, states=None):
 
     try:
         for page in range(page_nums):
-            print(f'starting page {page}...')
+            logging.debug(f'starting page {page}...')
             process_data_on_page()
             next_page()
 
-        print('Scraping completed!')
+        logging.debug('Scraping completed!')
         driver.quit()
     except Exception as e:
-        print(f'Exception: {e}')
+        logging.debug(f'Exception: {e}')
         driver.quit()
