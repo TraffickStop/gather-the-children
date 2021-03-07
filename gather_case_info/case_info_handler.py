@@ -55,7 +55,7 @@ def handler(event, context):
         }
 
 def init_driver():
-    print('Initializing driver...')
+    # print('Initializing driver...')
     options = Options()
     options.binary_location = '/opt/headless-chromium'
     options.add_argument('--headless')
@@ -64,11 +64,11 @@ def init_driver():
     options.add_argument('--disable-dev-shm-usage')
 
     driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
-    print('Driver initialized...')
+    # print('Driver initialized...')
     return driver
 
 def remove_from_queue(message):
-    print("removing from queue")
+    # print("removing from queue")
     client = boto3.client('sqs')
     response = client.delete_message(
         QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
@@ -76,7 +76,7 @@ def remove_from_queue(message):
     )
 
 def send_to_dead_queue(message):
-    print("sending to dead queue")
+    # print("sending to dead queue")
     body = json.dumps(message['body'])
     client = boto3.client('sqs')
     response = client.send_message(
