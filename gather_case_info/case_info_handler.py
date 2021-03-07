@@ -11,9 +11,8 @@ import json
 import logging
 import os
 
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logger = logging.getLogger()
-logger.setLevel(LOGLEVEL)
+logger.setLevel(logging.getLevelName(os.environ.get("LOGLEVEL", "INFO").upper()))
 
 def handler(event, context):
     try:

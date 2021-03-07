@@ -12,9 +12,8 @@ import pdb, re, time
 import logging
 import os
 
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logger = logging.getLogger()
-logger.setLevel(LOGLEVEL)
+logger.setLevel(logging.getLevelName(os.environ.get("LOGLEVEL", "INFO").upper()))
 
 # CONSTANTS
 CASE_NUMBER_KEY = 'Case Number'
@@ -133,6 +132,7 @@ def get_page_numbers():
     return page_nums
 
 def init_driver():
+    print("shouldn't print about driver")
     logger.debug('Initializing global driver to variable named "driver"')
     options = Options()
     options.binary_location = '/opt/headless-chromium'
@@ -174,6 +174,7 @@ def process_data_on_page():
         for key in case_info:
             message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
         
+        print('should log')
         logger.info("Collected data for case number:", message['caseNumber'])
         send_to_sqs(message)
 
