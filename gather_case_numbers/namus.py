@@ -42,10 +42,13 @@ SCRAPED_TO_DB_KEYS = {
 MAX_ROWS_PER_PAGE = 100
 
 def apply_filters(gt_date=None, lt_date=None, states=None):
+    time.sleep(2)
+    print("Adding filters")
     if states is not None: apply_state_filter(states)
     apply_date_filter(gt_date=gt_date, lt_date=lt_date)
 
 def apply_date_filter(gt_date=None, lt_date=None):
+    print('Setting date range...')
     if gt_date == None and lt_date == None:
         raise "must select a date"
     elif gt_date == None:
@@ -114,12 +117,14 @@ def apply_state_filter(states):
     
 def get_page_numbers():
     print('Calculating number of pages...')
+    time.sleep(2)
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     page_num_info = soup.find('nav', {'aria-label': 'Page Selection'}).find('span').text
     index_of_slash = re.search('/', page_num_info).span()[1]
     page_nums = int(page_num_info[index_of_slash:].strip())
 
+    print(f'Calculated {page_nums} pages')
     return page_nums
 
 def init_driver():
@@ -130,6 +135,7 @@ def init_driver():
     options.add_argument('--no-sandbox')
     options.add_argument('--single-process')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--incognito')
 
     global driver
     driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
@@ -139,13 +145,11 @@ def next_page():
 
     try:
         driver.find_element_by_xpath("//i[@class=\"icon-triangle-right\"]").click()
-        time.sleep(5)
+        time.sleep(2)
     except:
         print('last page completed...')
 
 def process_data_on_page():
-    print('Gathering info...')
-
     # navigate to list view
     driver.find_element_by_xpath("//i[@class=\"icon-list\"]").click()
     time.sleep(1.5)
@@ -164,7 +168,8 @@ def process_data_on_page():
         message = {}
         for key in case_info:
             message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
-            
+        
+        print("Collected data for row:", message)
         send_to_sqs(message)
 
 def rows_to_show(num_rows):
