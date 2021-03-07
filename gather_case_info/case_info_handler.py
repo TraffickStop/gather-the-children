@@ -12,13 +12,14 @@ import logging
 import os
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-logging.basicConfig(level=LOGLEVEL)
+logger = logging.getLogger()
+logger.setLevel(LOGLEVEL)
 
 def handler(event, context):
     try:
         body = ""
         driver = init_driver()
-        logging.info('Number of messages in batch: ', len(event['Records']))
+        logger.info('Number of messages in batch: ', len(event['Records']))
         for record in event['Records']:
             try:
                 case_info = record["body"]
@@ -44,14 +45,14 @@ def handler(event, context):
                 continue
 
         driver.quit()
-        logging.info("Body:", body)
+        logger.info("Body:", body)
         return {
             'statusCode': 200,
             'body': body
         }
     except Exception as e:
-        logging.info("Exception:", e)
-        logging.info("Body:", body)
+        logger.info("Exception:", e)
+        logger.info("Body:", body)
 
         return {
             'statusCode': 400,
@@ -60,7 +61,7 @@ def handler(event, context):
         }
 
 def init_driver():
-    logging.debug('Initializing driver...')
+    logger.debug('Initializing driver...')
     options = Options()
     options.binary_location = '/opt/headless-chromium'
     options.add_argument('--headless')
@@ -69,11 +70,11 @@ def init_driver():
     options.add_argument('--disable-dev-shm-usage')
 
     driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
-    logging.debug('Driver initialized...')
+    logger.debug('Driver initialized...')
     return driver
 
 def remove_from_queue(message):
-    logging.debug("removing from queue")
+    logger.debug("removing from queue")
     client = boto3.client('sqs')
     response = client.delete_message(
         QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
@@ -81,7 +82,7 @@ def remove_from_queue(message):
     )
 
 def send_to_dead_queue(message):
-    logging.debug("sending to dead queue")
+    logger.debug("sending to dead queue")
     body = json.dumps(message['body'])
     client = boto3.client('sqs')
     response = client.send_message(

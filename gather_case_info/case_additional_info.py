@@ -8,7 +8,8 @@ import logging
 import os
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-logging.basicConfig(level=LOGLEVEL)
+logger = logging.getLogger()
+logger.setLevel(LOGLEVEL)
 
 # CONSTANTS
 SCRAPED_TO_DB_KEYS = {
@@ -72,7 +73,7 @@ KEYS_NOT_TO_MAP = [
 ]
 
 def scrape_demographics(record, driver):
-    logging.debug('Scraping demographics section...')
+    logger.debug('Scraping demographics section...')
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     demographics_section = soup.find('div', id='Demographics')
@@ -86,7 +87,7 @@ def scrape_demographics(record, driver):
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_circumstances(record, driver):
-    logging.debug('Scraping circumstances section...')
+    logger.debug('Scraping circumstances section...')
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     circumstances_section = soup.find('div', id='Circumstances')
@@ -102,7 +103,7 @@ def scrape_circumstances(record, driver):
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_investigating_agencies(record, driver):
-    logging.debug('Scraping investigating agencies section...')
+    logger.debug('Scraping investigating agencies section...')
 
     driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
     wait_for_driver_load(By.CLASS_NAME, 'icon-chevron-up', driver, additional_sec=1)
@@ -132,7 +133,7 @@ def scrape_investigating_agencies(record, driver):
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_namus_contact_section(record, driver):
-    logging.debug('Scraping agencies contact section...')
+    logger.debug('Scraping agencies contact section...')
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     contact_info_section = soup.find('case-contact-information')
@@ -145,7 +146,7 @@ def scrape_namus_contact_section(record, driver):
     return map_scraped_keys_to_db_keys(scraped_data, record)
 
 def scrape_physical_description(record, driver):
-    logging.debug('Scraping physical description section...')
+    logger.debug('Scraping physical description section...')
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     physical_description_section = soup.find('div', id='PhysicalDescription')
@@ -174,13 +175,13 @@ def wait_for_driver_load(by_identifier, identifier, driver, additional_sec=0):
         )
         time.sleep(additional_sec)
     except Exception as e:
-        logging.error(f'Could not find {identifier} element after waiting 10 seconds.')
+        logger.error(f'Could not find {identifier} element after waiting 10 seconds.')
         raise e
 
 def main(case_info, driver):
     case_id = case_info['caseNumber'][2:]
 
-    logging.debug('Navigating to Namus.gov details section...')
+    logger.debug('Navigating to Namus.gov details section...')
     driver.get(f'https://www.namus.gov/MissingPersons/Case#/{case_id}/details?nav')
     wait_for_driver_load(By.ID, 'Demographics', driver)
     case_info = scrape_demographics(case_info, driver)

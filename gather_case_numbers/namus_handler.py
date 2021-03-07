@@ -4,7 +4,8 @@ import logging
 import os
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-logging.basicConfig(level=LOGLEVEL)
+logger = logging.getLogger()
+logger.setLevel(LOGLEVEL)
 
 def handler(event, context):
     try:
@@ -14,7 +15,7 @@ def handler(event, context):
             'body': 'Successfully wrote to SQS',
         }
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         return {
             'statusCode': 400,
             'error': e
