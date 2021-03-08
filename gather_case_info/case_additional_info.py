@@ -70,7 +70,8 @@ KEYS_NOT_TO_MAP = [
     'Description',
     'Phone',
     'Secondary Phone',
-    'Email'
+    'Email',
+    'Tribe Enrollment / Affiliation'
 ]
 
 def scrape_demographics(record, driver):
