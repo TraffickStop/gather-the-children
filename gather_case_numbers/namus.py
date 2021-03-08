@@ -153,7 +153,7 @@ def next_page():
         driver.find_element_by_xpath("//i[@class=\"icon-triangle-right\"]").click()
         time.sleep(2)
     except:
-        logger.info('last page completed...')
+        logger.exception('last page completed...')
 
 def process_data_on_page():
     # navigate to list view

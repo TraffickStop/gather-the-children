@@ -10,7 +10,7 @@ logger.setLevel(LOGLEVEL)
 
 def handler(event, context):
     try:
-        gather_ids(gt_date='June-2-2011', lt_date='April-1-2015')
+        gather_ids(lt_date='June-1-2011')
         return {
             'statusCode': 200,
             'body': 'Successfully wrote to SQS',
