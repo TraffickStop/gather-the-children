@@ -20,7 +20,7 @@ def handler(event, context):
     try:
         body = ""
         driver = init_driver()
-        logger.info('Number of messages in batch: ', len(event['Records']))
+        logger.info('Number of messages in batch: {0}'.format(len(event['Records'])))
         for record in event['Records']:
             try:
                 case_info = record["body"]
@@ -46,14 +46,14 @@ def handler(event, context):
                 continue
 
         driver.quit()
-        logger.info("Body:", body)
+        logger.info("Body: {0}".format(body))
         return {
             'statusCode': 200,
             'body': body
         }
     except Exception as e:
-        logger.exception("Exception:", e)
-        logger.info("Body:", body)
+        logger.exception("Exception: {0}".format(e))
+        logger.info("Body: {0}".format(body))
 
         return {
             'statusCode': 400,
@@ -103,6 +103,6 @@ def write_to_db_and_s3(record, image):
     
     # Upload at the same time to avoid one working without the other
     table.put_item(Item=record)
-    logger.debug('Uploaded {record} to db')
+    logger.debug("Uploaded {0} to db".format(record))
     bucket.upload_fileobj(image, record['caseNumber']+'.jpg')
-    logger.debug(f'Uploaded {record["caseNumber"]}.jpg to s3')
+    logger.debug(f"Uploaded {0}.jpg to s3".format(record["caseNumber"]))

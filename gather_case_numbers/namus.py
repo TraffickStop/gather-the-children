@@ -175,7 +175,7 @@ def process_data_on_page():
         for key in case_info:
             message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
         
-        logger.info("Collected data for case number:", message['caseNumber'])
+        logger.info("Collected data for case number: {0}".format(message['caseNumber']))
         send_to_sqs(message)
 
 def rows_to_show(num_rows):
