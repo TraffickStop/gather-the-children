@@ -8,12 +8,19 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import json
+import os
+import logging
+
+LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+
+logger = logging.getLogger()
+logger.setLevel(LOGLEVEL)
 
 def handler(event, context):
     try:
         body = ""
         driver = init_driver()
-        print('Number of messages in batch: ', len(event['Records']))
+        logger.info('Number of messages in batch: ', len(event['Records']))
         for record in event['Records']:
             try:
                 case_info = record["body"]
@@ -39,14 +46,14 @@ def handler(event, context):
                 continue
 
         driver.quit()
-        print("Body:", body)
+        logger.info("Body:", body)
         return {
             'statusCode': 200,
             'body': body
         }
     except Exception as e:
-        print("Exception:", e)
-        print("Body:", body)
+        logger.exception("Exception:", e)
+        logger.info("Body:", body)
 
         return {
             'statusCode': 400,
@@ -55,7 +62,7 @@ def handler(event, context):
         }
 
 def init_driver():
-    # print('Initializing driver...')
+    logger.debug('Initializing driver...')
     options = Options()
     options.binary_location = '/opt/headless-chromium'
     options.add_argument('--headless')
@@ -64,11 +71,11 @@ def init_driver():
     options.add_argument('--disable-dev-shm-usage')
 
     driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
-    # print('Driver initialized...')
+    logger.debug('Driver initialized...')
     return driver
 
 def remove_from_queue(message):
-    # print("removing from queue")
+    logger.debug("removing from queue")
     client = boto3.client('sqs')
     response = client.delete_message(
         QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
@@ -76,7 +83,7 @@ def remove_from_queue(message):
     )
 
 def send_to_dead_queue(message):
-    # print("sending to dead queue")
+    logger.debug("sending to dead queue")
     body = json.dumps(message['body'])
     client = boto3.client('sqs')
     response = client.send_message(
@@ -96,4 +103,6 @@ def write_to_db_and_s3(record, image):
     
     # Upload at the same time to avoid one working without the other
     table.put_item(Item=record)
+    logger.debug('Uploaded {record} to db')
     bucket.upload_fileobj(image, record['caseNumber']+'.jpg')
+    logger.debug(f'Uploaded {record["caseNumber"]}.jpg to s3')
