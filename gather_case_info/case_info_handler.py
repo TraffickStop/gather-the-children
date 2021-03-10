@@ -18,47 +18,50 @@ logger.setLevel(LOGLEVEL)
 
 def handler(event, context):
     try:
-        body = ""
         driver = init_driver()
         logger.info('Number of messages in batch: {0}'.format(len(event['Records'])))
         for record in event['Records']:
             try:
                 case_info = record["body"]
+                print("CASE INFO VALUE:")
+                print(case_info)
                 if type(case_info) == type(''): case_info = ast.literal_eval(case_info)
+                print("CASE INFO IS TYPE: ", type(case_info))
 
                 img_response = upload_image_to_s3(case_info["caseNumber"][2:], record, driver)
                 if img_response == "deleted message":
-                    body = body + f'No photo uploaded for {case_info["caseNumber"]}\n'
+                    logger.info("No photo uploaded for {0}".format(case_info["caseNumber"]))
                     remove_from_queue(record)
                     continue
     
                 case_info = add_additional_info(case_info, driver)
 
                 write_to_db_and_s3(case_info, img_response)
-                body = body + f'Successfully uploaded photo and wrote to DB for {case_info["caseNumber"]}\n'
+                logger.info("Successfully uploaded photo and wrote to DB for {0}".format(case_info["caseNumber"]))
 
                 remove_from_queue(record)
             except Exception as e:
-                body = body + f'Exception thrown for {case_info["caseNumber"]}: {e}\n'
+                print("[EXCEPTION] CASE INFO IS TYPE: ", type(case_info))
+                print("[EXCEPTION] CASE INFO VALUE:")
+                print(case_info)
+                logger.exception("Exception thrown for {0}: {1}".format(case_info["caseNumber"], e))
                 
                 remove_from_queue(record)
                 send_to_dead_queue(record)
                 continue
 
         driver.quit()
-        logger.info("Body: {0}".format(body))
         return {
             'statusCode': 200,
-            'body': body
+            'body': 'success'
         }
     except Exception as e:
         logger.exception("Exception: {0}".format(e))
-        logger.info("Body: {0}".format(body))
 
         return {
             'statusCode': 400,
             'error': e,
-            'body': body
+            'body': 'failed'
         }
 
 def init_driver():
@@ -83,7 +86,7 @@ def remove_from_queue(message):
     )
 
 def send_to_dead_queue(message):
-    logger.debug("sending to dead queue")
+    logger.info("Sending to dead queue {0}".format(message['body']))
     body = json.dumps(message['body'])
     client = boto3.client('sqs')
     response = client.send_message(
