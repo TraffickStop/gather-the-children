@@ -107,7 +107,19 @@ def scrape_circumstances(record, driver):
 def scrape_investigating_agencies(record, driver):
     logger.debug('Scraping investigating agencies section...')
 
-    driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
+    try:
+        time.sleep(0.5)
+        driver.find_element_by_id('InvestigatingAgencies').find_element_by_class_name('icon-chevron-down').click()
+    except:
+        try:
+            if driver.find_element_by_xpath('//*[@id="InvestigatingAgencies"]/no-information-entered/div/div/div/h4').text == "No Information Entered":
+                logger.info("No information entered for Investigating Agencies")
+                return record
+            else:
+                raise
+        except:
+            raise
+
     wait_for_driver_load(By.CLASS_NAME, 'icon-chevron-up', driver, additional_sec=1)
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
