@@ -1,5 +1,4 @@
 import requests
-import boto3
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,7 +11,7 @@ ORIGINAL = "Original"
 THUMBNAIL = "Thumbnail"
 
 # Pass in Case number and message
-def upload_image_to_s3(case_number, message, driver):
+def get_image_response(case_number, message, driver):
     try:
         url = NAMUS_URL_1+str(case_number)+NAMUS_URL_2
 
@@ -20,7 +19,7 @@ def upload_image_to_s3(case_number, message, driver):
         element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, NAMUS_IMAGE_XPATH)))
         link = element.get_attribute('src').replace(THUMBNAIL, ORIGINAL)
 
-        if "Default" in link: return delete_sqs_message(message)
+        if "Default" in link: return "delete message"
 
         r = requests.get(link, stream=True)
 
@@ -28,11 +27,3 @@ def upload_image_to_s3(case_number, message, driver):
 
     except Exception as e:
         raise
-
-def delete_sqs_message(message):
-    client = boto3.client('sqs')
-    response = client.delete_message(
-        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
-        ReceiptHandle=message["receiptHandle"]
-    )
-    return "deleted message"

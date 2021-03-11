@@ -6,7 +6,7 @@ def receive_message():
     client = boto3.client('sqs')
     response = client.receive_message(
         QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers-dead-letter-queue',
-        MaxNumberOfMessages=10
+        MaxNumberOfMessages=1
     )
     return response
 
@@ -29,12 +29,4 @@ def delete_sqs_message(message):
 while True:
     response = receive_message()
     for message in response['Messages']:
-        res1 = send_to_sqs(message['Body'])
-        if res1['ResponseMetadata']['HTTPStatusCode'] == 200:
-            res2 = delete_sqs_message(message)
-            if res2['ResponseMetadata']['HTTPStatusCode'] != 200:
-                print("couldn't delete", message)
-            else:
-                print("Successfully sent to active queue and deleted from dead queue", message)
-        elif res1['ResponseMetadata']['HTTPStatusCode'] != 200:
-            print("couldn't send message", message)
+        print(message['Body'])
