@@ -20,34 +20,31 @@ def handler(event, context):
     try:
         driver = init_driver()
         logger.info('Number of messages in batch: {0}'.format(len(event['Records'])))
-        for record in event['Records']:
+
+        for record in event.get('Records'):
             try:
-                case_info = record["body"]
-                print("CASE INFO VALUE:")
-                print(case_info)
-                if type(case_info) == type(''): case_info = ast.literal_eval(case_info)
-                print("CASE INFO IS TYPE: ", type(case_info))
+                case_info = record.get("body")
+
+                case_info = json.loads(case_info)
+                if type(case_info) == type(''):
+                    case_info = json.loads(case_info)
 
                 img_response = upload_image_to_s3(case_info["caseNumber"][2:], record, driver)
                 if img_response == "deleted message":
-                    logger.info("No photo uploaded for {0}".format(case_info["caseNumber"]))
                     remove_from_queue(record)
+                    logger.info("No photo uploaded for {0}".format(case_info["caseNumber"]))
                     continue
     
                 case_info = add_additional_info(case_info, driver)
 
                 write_to_db_and_s3(case_info, img_response)
-                logger.info("Successfully uploaded photo and wrote to DB for {0}".format(case_info["caseNumber"]))
-
                 remove_from_queue(record)
+
+                logger.info("Successfully uploaded photo and wrote to DB for {0}".format(case_info["caseNumber"]))
             except Exception as e:
-                print("[EXCEPTION] CASE INFO IS TYPE: ", type(case_info))
-                print("[EXCEPTION] CASE INFO VALUE:")
-                print(case_info)
-                logger.exception("Exception thrown for {0}: {1}".format(case_info["caseNumber"], e))
-                
                 remove_from_queue(record)
                 send_to_dead_queue(record)
+                logger.exception("Exception thrown for {0}: {1}".format(case_info["caseNumber"], e))
                 continue
 
         driver.quit()
@@ -78,7 +75,7 @@ def init_driver():
     return driver
 
 def remove_from_queue(message):
-    logger.debug("removing from queue")
+    logger.debug("Removing from queue")
     client = boto3.client('sqs')
     response = client.delete_message(
         QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
@@ -86,7 +83,7 @@ def remove_from_queue(message):
     )
 
 def send_to_dead_queue(message):
-    logger.info("Sending to dead queue {0}".format(message['body']))
+    logger.debug("Sending to dead queue {0}".format(message['body']))
     body = json.dumps(message['body'])
     client = boto3.client('sqs')
     response = client.send_message(

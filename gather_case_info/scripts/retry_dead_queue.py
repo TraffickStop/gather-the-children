@@ -26,8 +26,7 @@ def delete_sqs_message(message):
     )
     return response
 
-response = {'Messages': None}
-while 'Messages' in response:
+while True:
     response = receive_message()
     for message in response['Messages']:
         res1 = send_to_sqs(message['Body'])
