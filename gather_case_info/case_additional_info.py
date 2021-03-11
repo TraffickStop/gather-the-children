@@ -115,8 +115,6 @@ def scrape_investigating_agencies(record, driver):
             if driver.find_element_by_xpath('//*[@id="InvestigatingAgencies"]/no-information-entered/div/div/div/h4').text == "No Information Entered":
                 logger.info("No information entered for Investigating Agencies")
                 return record
-            else:
-                raise
         except:
             raise
 
