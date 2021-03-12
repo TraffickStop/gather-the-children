@@ -19,19 +19,19 @@ logger.setLevel(LOGLEVEL)
 
 # CONSTANTS
 CASE_NUMBER_KEY = 'Case Number'
-INFO_COLUMNS = [
-    'Case Number',
-    'DLC',
-    'Last Name',
-    'First Name',
-    'Missing Age',
-    'City',
-    'County',
-    'State',
-    'Sex',
-    'Race',
-    'Date Modified'
-]
+# INFO_COLUMNS = [
+#     'Case Number',
+#     'DLC',
+#     'Last Name',
+#     'First Name',
+#     'Missing Age',
+#     'City',
+#     'County',
+#     'State',
+#     'Sex',
+#     'Race',
+#     'Date Modified'
+# ]
 SCRAPED_TO_DB_KEYS = {
     'Case Number': 'caseNumber',
     'DLC': 'dlc',
@@ -121,17 +121,17 @@ def apply_state_filter(states):
                 state_input_box.send_keys(state)
                 state_input_box.send_keys(Keys.ENTER)
     
-def get_page_numbers():
-    logger.debug('Calculating number of pages...')
-    time.sleep(2)
+# def get_page_numbers():
+#     logger.debug('Calculating number of pages...')
+#     time.sleep(2)
     
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    page_num_info = soup.find('nav', {'aria-label': 'Page Selection'}).find('span').text
-    index_of_slash = re.search('/', page_num_info).span()[1]
-    page_nums = int(page_num_info[index_of_slash:].strip())
+#     soup = BeautifulSoup(driver.page_source, 'html.parser')
+#     page_num_info = soup.find('nav', {'aria-label': 'Page Selection'}).find('span').text
+#     index_of_slash = re.search('/', page_num_info).span()[1]
+#     page_nums = int(page_num_info[index_of_slash:].strip())
 
-    logger.info(f'Calculated {page_nums} pages')
-    return page_nums
+#     logger.info(f'Calculated {page_nums} pages')
+#     return page_nums
 
 def init_driver():
     logger.debug('Initializing global driver to variable named "driver"')
@@ -146,44 +146,44 @@ def init_driver():
     global driver
     driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
 
-def next_page():
-    logger.debug('clicking next page...')
+# def next_page():
+#     logger.debug('clicking next page...')
 
-    try:
-        driver.find_element_by_xpath("//i[@class=\"icon-triangle-right\"]").click()
-        time.sleep(2)
-    except:
-        logger.exception('last page completed...')
+#     try:
+#         driver.find_element_by_xpath("//i[@class=\"icon-triangle-right\"]").click()
+#         time.sleep(2)
+#     except:
+#         logger.exception('last page completed...')
 
-def process_data_on_page():
-    # navigate to list view
-    driver.find_element_by_xpath("//i[@class=\"icon-list\"]").click()
-    time.sleep(1.5)
+# def process_data_on_page():
+#     # navigate to list view
+#     driver.find_element_by_xpath("//i[@class=\"icon-list\"]").click()
+#     time.sleep(1.5)
 
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    rows = soup.find('div', class_='ui-grid-canvas').contents
+#     soup = BeautifulSoup(driver.page_source, 'html.parser')
+#     rows = soup.find('div', class_='ui-grid-canvas').contents
 
-    for row in rows:
-        if row == ' ': continue
+#     for row in rows:
+#         if row == ' ': continue
 
-        case_info = {}
-        cells = row.find_all('div', class_='ui-grid-cell-contents')
-        for index, cell in enumerate(cells):
-            case_info[INFO_COLUMNS[index]] = cell.text.strip()
+#         case_info = {}
+#         cells = row.find_all('div', class_='ui-grid-cell-contents')
+#         for index, cell in enumerate(cells):
+#             case_info[INFO_COLUMNS[index]] = cell.text.strip()
         
-        message = {}
-        for key in case_info:
-            message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
+#         message = {}
+#         for key in case_info:
+#             message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
         
-        logger.info("Collected data for case number: {0}".format(message['caseNumber']))
-        send_to_sqs(message)
+#         logger.info("Collected data for case number: {0}".format(message['caseNumber']))
+#         send_to_sqs(message)
 
-def rows_to_show(num_rows):
-    logger.debug(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
+# def rows_to_show(num_rows):
+#     logger.debug(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
 
-    time.sleep(2)
-    results_selection_dropdown = driver.find_element_by_xpath('//*[@id="visitor"]/div[1]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[3]/search-results-pager/ng-include/div/div/div/label/select')
-    Select(results_selection_dropdown).select_by_value(f'{num_rows}')
+#     time.sleep(2)
+#     results_selection_dropdown = driver.find_element_by_xpath('//*[@id="visitor"]/div[1]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[3]/search-results-pager/ng-include/div/div/div/label/select')
+#     Select(results_selection_dropdown).select_by_value(f'{num_rows}')
 
 def search():
     logger.debug('Searching...')
@@ -200,25 +200,45 @@ def send_to_sqs(record):
         MessageBody=message
     )
 
+def namus_login():
+    login = '//*[@id="loginUsername"]'
+    password_input = '//*[@id="loginPassword"]'
+    login_button = '//*[@id="LoginSubmit"]'
+    email = 'mism.traffick.stop@gmail.com'
+    password = 'b5C4V68@*&2D'
+    driver.find_element_by_xpath('//*[@id="visitor"]/div[2]/header/nav[2]/ul/li[3]/a').click()
+    time.sleep(2)
+    driver.find_element_by_xpath(login).send_keys(email)
+    driver.find_element_by_xpath(password_input).send_keys(password)
+    driver.find_element_by_xpath(login_button).click()
+    time.sleep(5)
+
+def download_csv():
+    export_csv_link = '//*[@id="public"]/div[2]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[2]/a/span'
+    
+    driver.find_element_by_xpath(export_csv_link).click()
+    time.sleep(10)
+
 def main(gt_date=None, lt_date=None, states=None):
     init_driver()
 
-    logger.debug('Navigating to namus.gov...')
+    print('Navigating to namus.gov...')
     driver.get("https://www.namus.gov/MissingPersons/Search")
 
-    apply_filters(gt_date=gt_date, lt_date=lt_date, states=states)
-    search()
-    rows_to_show(MAX_ROWS_PER_PAGE)
-    page_nums = get_page_numbers()
-
     try:
-        for page in range(page_nums):
-            logger.info(f'starting page {page}...')
-            process_data_on_page()
-            next_page()
+        print('logging in to Namus account')
+        namus_login()
 
-        logger.info('Scraping completed!')
-        driver.quit()
+        print('applying search filters')
+        apply_filters(last_date, date_operand, states)
+        
+        print('navigating to results')
+        search()
+        
+        print('downloading csv')
+        download_csv()
+        
     except Exception as e:
-        logger.exception(f'Exception: {e}')
         driver.quit()
+        print(f'Exception: {e}')
+        raise
