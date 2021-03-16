@@ -110,7 +110,9 @@ def apply_state_filter(states):
                 state_input_box.send_keys(Keys.ENTER)
 
 def download_csv():
+    if path.exists(DOWNLOAD_PATH): rmtree(DOWNLOAD_PATH)
     os.mkdir(DOWNLOAD_PATH)
+
     export_csv_link = '//*[@id="public"]/div[2]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[2]/a/span'
     
     driver.find_element_by_xpath(export_csv_link).click()
@@ -155,11 +157,11 @@ def namus_login():
     driver.find_element_by_xpath(login_button).click()
     time.sleep(5)
 
- def process_cases(file_name):
+def process_cases(file_name):
     df = pd.read_csv(file_name)
     df.rename(columns=SCRAPED_TO_DB_KEYS, inplace=True)
 
-    for row in df.iterrows():
+    for idx, row in df.iterrows():
         send_to_sqs(row.to_dict())
 
 def search():
@@ -182,29 +184,31 @@ def send_to_sqs(record):
 def main(gt_date=None, lt_date=None, states=None):
     init_driver()
 
-    print('Navigating to namus.gov...')
+    logger.info('Navigating to namus.gov...')
     driver.get("https://www.namus.gov/MissingPersons/Search")
 
     try:
-        print('logging in to Namus account')
+        logger.info('logging in to Namus account')
         namus_login()
 
-        print('applying search filters')
+        logger.info('applying search filters')
         apply_filters(gt_date=gt_date, lt_date=lt_date, states=states)
         
-        print('navigating to results')
+        logger.info('navigating to results')
         search()
         
-        print('downloading csv')
+        logger.info('downloading csv')
         file_name = download_csv()
 
-        print('sending cases to sqs')
+        logger.info('sending cases to sqs')
         process_cases(file_name)
 
-        print('removing temp directory and contents')
-        rmtree(DOWNLOAD_PATH)
+        logger.info('removing temp directory and contents')
+        if path.exists(DOWNLOAD_PATH): rmtree(DOWNLOAD_PATH)
 
+        logger.info('process completed successfully')
     except Exception as e:
         driver.quit()
-        print(f'Exception: {e}')
+        if path.exists(DOWNLOAD_PATH): rmtree(DOWNLOAD_PATH)
+        logger.exception(f'Exception: {e}')
         raise
