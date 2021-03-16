@@ -11,6 +11,9 @@ from bs4 import BeautifulSoup
 import pdb, re, time
 import os
 import logging
+from os import path
+import pandas as pd
+from shutil import rmtree
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 
@@ -19,19 +22,6 @@ logger.setLevel(LOGLEVEL)
 
 # CONSTANTS
 CASE_NUMBER_KEY = 'Case Number'
-# INFO_COLUMNS = [
-#     'Case Number',
-#     'DLC',
-#     'Last Name',
-#     'First Name',
-#     'Missing Age',
-#     'City',
-#     'County',
-#     'State',
-#     'Sex',
-#     'Race',
-#     'Date Modified'
-# ]
 SCRAPED_TO_DB_KEYS = {
     'Case Number': 'caseNumber',
     'DLC': 'dlc',
@@ -42,10 +32,10 @@ SCRAPED_TO_DB_KEYS = {
     'County': 'county',
     'State': 'state',
     'Sex': 'sex',
-    'Race': 'race',
+    'Race / Ethnicity': 'race',
     'Date Modified': 'dateModified'
 }
-MAX_ROWS_PER_PAGE = 100
+DOWNLOAD_PATH = '/tmp/cases'
 
 def apply_filters(gt_date=None, lt_date=None, states=None):
     time.sleep(2)
@@ -106,8 +96,6 @@ def apply_date_filter(gt_date=None, lt_date=None):
         year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[2]/date-input/div/years-input/select')
         Select(year_box).select_by_visible_text(lt_date.split('-')[2])
 
-
-
 def apply_state_filter(states):
     logger.debug('Adding selected states to filter...')
 
@@ -120,18 +108,23 @@ def apply_state_filter(states):
             for state in states:
                 state_input_box.send_keys(state)
                 state_input_box.send_keys(Keys.ENTER)
-    
-# def get_page_numbers():
-#     logger.debug('Calculating number of pages...')
-#     time.sleep(2)
-    
-#     soup = BeautifulSoup(driver.page_source, 'html.parser')
-#     page_num_info = soup.find('nav', {'aria-label': 'Page Selection'}).find('span').text
-#     index_of_slash = re.search('/', page_num_info).span()[1]
-#     page_nums = int(page_num_info[index_of_slash:].strip())
 
-#     logger.info(f'Calculated {page_nums} pages')
-#     return page_nums
+def download_csv():
+    os.mkdir(DOWNLOAD_PATH)
+    export_csv_link = '//*[@id="public"]/div[2]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[2]/a/span'
+    
+    driver.find_element_by_xpath(export_csv_link).click()
+
+    wait_time = 1
+    while len(os.listdir(DOWNLOAD_PATH)) == 0:
+        time.sleep(wait_time)
+        if wait_time > 35:
+            raise "Waited for {0} seconds and still could not find the download".format(wait_time)
+
+        wait_time = wait_time * 2 # double the wait time every iteration
+    
+    downloaded_file_name = os.listdir(DOWNLOAD_PATH)[0]
+    return path.join(DOWNLOAD_PATH, downloaded_file_name)
 
 def init_driver():
     logger.debug('Initializing global driver to variable named "driver"')
@@ -143,62 +136,11 @@ def init_driver():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--incognito')
 
+    prefs = {'download.default_directory' : DOWNLOAD_PATH}
+    options.add_experimental_option('prefs', prefs)
+
     global driver
     driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
-
-# def next_page():
-#     logger.debug('clicking next page...')
-
-#     try:
-#         driver.find_element_by_xpath("//i[@class=\"icon-triangle-right\"]").click()
-#         time.sleep(2)
-#     except:
-#         logger.exception('last page completed...')
-
-# def process_data_on_page():
-#     # navigate to list view
-#     driver.find_element_by_xpath("//i[@class=\"icon-list\"]").click()
-#     time.sleep(1.5)
-
-#     soup = BeautifulSoup(driver.page_source, 'html.parser')
-#     rows = soup.find('div', class_='ui-grid-canvas').contents
-
-#     for row in rows:
-#         if row == ' ': continue
-
-#         case_info = {}
-#         cells = row.find_all('div', class_='ui-grid-cell-contents')
-#         for index, cell in enumerate(cells):
-#             case_info[INFO_COLUMNS[index]] = cell.text.strip()
-        
-#         message = {}
-#         for key in case_info:
-#             message[SCRAPED_TO_DB_KEYS[key]] = case_info[key]
-        
-#         logger.info("Collected data for case number: {0}".format(message['caseNumber']))
-#         send_to_sqs(message)
-
-# def rows_to_show(num_rows):
-#     logger.debug(f'Setting {MAX_ROWS_PER_PAGE} rows per page...')
-
-#     time.sleep(2)
-#     results_selection_dropdown = driver.find_element_by_xpath('//*[@id="visitor"]/div[1]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[3]/search-results-pager/ng-include/div/div/div/label/select')
-#     Select(results_selection_dropdown).select_by_value(f'{num_rows}')
-
-def search():
-    logger.debug('Searching...')
-    search_results_section = driver.find_element_by_class_name('search-criteria-container')
-    search_actions = search_results_section.find_element_by_class_name('search-criteria-container-actions').find_elements_by_tag_name('input')
-    search_actions[1].click()
-    time.sleep(1.5)
-
-def send_to_sqs(record):
-    message = json.dumps(record)
-    client = boto3.client('sqs')
-    response = client.send_message(
-        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
-        MessageBody=message
-    )
 
 def namus_login():
     login = '//*[@id="loginUsername"]'
@@ -213,11 +155,29 @@ def namus_login():
     driver.find_element_by_xpath(login_button).click()
     time.sleep(5)
 
-def download_csv():
-    export_csv_link = '//*[@id="public"]/div[2]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[2]/a/span'
-    
-    driver.find_element_by_xpath(export_csv_link).click()
-    time.sleep(10)
+ def process_cases(file_name):
+    df = pd.read_csv(file_name)
+    df.rename(columns=SCRAPED_TO_DB_KEYS, inplace=True)
+
+    for row in df.iterrows():
+        send_to_sqs(row.to_dict())
+
+def search():
+    logger.debug('Searching...')
+    search_results_section = driver.find_element_by_class_name('search-criteria-container')
+    search_actions = search_results_section.find_element_by_class_name('search-criteria-container-actions').find_elements_by_tag_name('input')
+    search_actions[1].click()
+    time.sleep(1.5)
+
+def send_to_sqs(record):
+    logger.info("Sending to SQS for case number: {0}".format(record['caseNumber']))
+    message = json.dumps(record)
+    client = boto3.client('sqs')
+    response = client.send_message(
+        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
+        MessageBody=message
+    )
+    logger.info("Successfully sent message for: {0}".format(record['caseNumber']))
 
 def main(gt_date=None, lt_date=None, states=None):
     init_driver()
@@ -230,14 +190,20 @@ def main(gt_date=None, lt_date=None, states=None):
         namus_login()
 
         print('applying search filters')
-        apply_filters(last_date, date_operand, states)
+        apply_filters(gt_date=gt_date, lt_date=lt_date, states=states)
         
         print('navigating to results')
         search()
         
         print('downloading csv')
-        download_csv()
-        
+        file_name = download_csv()
+
+        print('sending cases to sqs')
+        process_cases(file_name)
+
+        print('removing temp directory and contents')
+        rmtree(DOWNLOAD_PATH)
+
     except Exception as e:
         driver.quit()
         print(f'Exception: {e}')
