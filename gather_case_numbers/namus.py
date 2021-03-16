@@ -44,6 +44,7 @@ def apply_filters(gt_date=None, lt_date=None, states=None):
 
 def apply_date_filter(gt_date=None, lt_date=None):
     logger.debug('Setting date range...')
+    time.sleep(2)
     if gt_date == None and lt_date == None:
         raise "must select a date"
     elif gt_date == None:
@@ -51,12 +52,15 @@ def apply_date_filter(gt_date=None, lt_date=None):
         operand_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[1]/select')
         Select(operand_box).select_by_visible_text(date_operand)
 
+        time.sleep(0.5)
         month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[1]')
         Select(month_box).select_by_visible_text(lt_date.split('-')[0])
 
+        time.sleep(0.5)
         day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[2]')
         Select(day_box).select_by_visible_text(lt_date.split('-')[1])
 
+        time.sleep(0.5)
         year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/years-input/select')
         Select(year_box).select_by_visible_text(lt_date.split('-')[2])
     elif lt_date == None:
@@ -64,12 +68,15 @@ def apply_date_filter(gt_date=None, lt_date=None):
         operand_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[1]/select')
         Select(operand_box).select_by_visible_text(date_operand)
 
+        time.sleep(0.5)
         month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div/date-input/div/select[1]')
         Select(month_box).select_by_visible_text(gt_date.split('-')[0])
 
+        time.sleep(0.5)
         day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div/date-input/div/select[2]')
         Select(day_box).select_by_visible_text(gt_date.split('-')[1])
 
+        time.sleep(0.5)
         year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div/date-input/div/years-input/select')
         Select(year_box).select_by_visible_text(gt_date.split('-')[2])
     else:
@@ -77,21 +84,27 @@ def apply_date_filter(gt_date=None, lt_date=None):
         operand_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[1]/select')
         Select(operand_box).select_by_visible_text(date_operand)
 
+        time.sleep(0.5)
         month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[1]')
         Select(month_box).select_by_visible_text(gt_date.split('-')[0])
 
+        time.sleep(0.5)
         day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/select[2]')
         Select(day_box).select_by_visible_text(gt_date.split('-')[1])
 
+        time.sleep(0.5)
         year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[1]/date-input/div/years-input/select')
         Select(year_box).select_by_visible_text(gt_date.split('-')[2])
 
+        time.sleep(0.5)
         month_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[2]/date-input/div/select[1]')
         Select(month_box).select_by_visible_text(lt_date.split('-')[0])
 
+        time.sleep(0.5)
         day_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[2]/date-input/div/select[2]')
         Select(day_box).select_by_visible_text(lt_date.split('-')[1])
 
+        time.sleep(0.5)
         year_box = driver.find_element_by_xpath('//*[@id="Circumstances"]/div[3]/div/date-range-input/div/div[2]/div[1]/div[2]/date-input/div/years-input/select')
         Select(year_box).select_by_visible_text(lt_date.split('-')[2])
 
@@ -112,15 +125,18 @@ def download_csv():
     if path.exists(DOWNLOAD_PATH): rmtree(DOWNLOAD_PATH)
     os.mkdir(DOWNLOAD_PATH)
 
-    export_csv_link = '//*[@id="public"]/div[2]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[2]/a/span'
+    export_csv_link = '//*[@id="public"]/div[2]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[2]/a/i'
     
     driver.find_element_by_xpath(export_csv_link).click()
 
     wait_time = 1
+    total_wait = 0
     while len(os.listdir(DOWNLOAD_PATH)) == 0:
+        total_wait = wait_time + total_wait
         time.sleep(wait_time)
+        logger.info('Waited {0} seconds for download.'.format(total_wait))
         if wait_time > 35:
-            raise "Waited for {0} seconds and still could not find the download".format(wait_time)
+            raise "Waited for {0} seconds and still could not find the download".format(total_wait)
 
         wait_time = wait_time * 2 # double the wait time every iteration
     
@@ -147,9 +163,13 @@ def namus_login():
     login = '//*[@id="loginUsername"]'
     password_input = '//*[@id="loginPassword"]'
     login_button = '//*[@id="LoginSubmit"]'
+    hamburger_menu = '//*[@id="visitor"]/div[2]/header/nav[1]/ul/li[2]/span/i'
+    mobile_nav_login = '//*[@id="mobileNav"]/div/ul/li[12]/a'
+
     email = 'mism.traffick.stop@gmail.com'
     password = 'b5C4V68@*&2D'
-    driver.find_element_by_xpath('//*[@id="visitor"]/div[2]/header/nav[2]/ul/li[3]/a').click()
+    driver.find_element_by_xpath(hamburger_menu).click()
+    driver.find_element_by_xpath(mobile_nav_login).click()
     time.sleep(2)
     driver.find_element_by_xpath(login).send_keys(email)
     driver.find_element_by_xpath(password_input).send_keys(password)
