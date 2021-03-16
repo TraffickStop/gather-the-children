@@ -9,7 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 import pdb, re, time
-import os
+import os, csv
 import logging
 from os import path
 from shutil import rmtree
@@ -157,11 +157,17 @@ def namus_login():
     time.sleep(5)
 
 def process_cases(file_name):
-    df = pd.read_csv(file_name)
-    df.rename(columns=SCRAPED_TO_DB_KEYS, inplace=True)
+    csv_file = open(file_name, "r", encoding='utf-8-sig')
 
-    for idx, row in df.iterrows():
-        send_to_sqs(row.to_dict())
+    csv_reader = csv.DictReader(csv_file)
+    for row in csv_reader:
+        dict_row = dict(row)
+        message = {}
+
+        for key in dict_row:
+            message[SCRAPED_TO_DB_KEYS[key]] = dict_row[key] 
+
+        send_to_sqs(message)
 
 def search():
     logger.debug('Searching...')
