@@ -85,6 +85,19 @@
               }
             }
           },
+          "ScrapingPackagesLambdaLayer": {
+            "Type": "AWS::Lambda::LayerVersion",
+            "Properties": {
+              "Content": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/namus-layer/dev/1615912262227-2021-03-16T16:31:02.227Z/scrapingPackages.zip"
+              },
+              "LayerName": "scrapingPackages",
+              "Description": "dependencies for scraping"
+            }
+          },
           "Chromedriver2LambdaLayer": {
             "Type": "AWS::Lambda::LayerVersion",
             "Properties": {
@@ -97,19 +110,6 @@
               "LayerName": "chromedriver2",
               "Description": "chrome driver layer"
             }
-          },
-          "ScrapingPackagesLambdaLayer": {
-            "Type": "AWS::Lambda::LayerVersion",
-            "Properties": {
-              "Content": {
-                "S3Bucket": {
-                  "Ref": "ServerlessDeploymentBucket"
-                },
-                "S3Key": "serverless/namus-layer/dev/1615862115782-2021-03-16T02:35:15.782Z/scrapingPackages.zip"
-              },
-              "LayerName": "scrapingPackages",
-              "Description": "dependencies for scraping"
-            }
           }
         },
         "Outputs": {
@@ -117,6 +117,20 @@
             "Value": {
               "Ref": "ServerlessDeploymentBucket"
             }
+          },
+          "ScrapingPackagesLambdaLayerQualifiedArn": {
+            "Description": "Current Lambda layer version",
+            "Value": {
+              "Ref": "ScrapingPackagesLambdaLayer"
+            }
+          },
+          "ScrapingPackagesLambdaLayerHash": {
+            "Description": "Current Lambda layer hash",
+            "Value": "61f337e1ce282c2d8f15201268f06f585df3228b"
+          },
+          "ScrapingPackagesLambdaLayerS3Key": {
+            "Description": "Current Lambda layer S3Key",
+            "Value": "serverless/namus-layer/dev/1615912262227-2021-03-16T16:31:02.227Z/scrapingPackages.zip"
           },
           "Chromedriver2LambdaLayerQualifiedArn": {
             "Description": "Current Lambda layer version",
@@ -131,20 +145,6 @@
           "Chromedriver2LambdaLayerS3Key": {
             "Description": "Current Lambda layer S3Key",
             "Value": "serverless/namus-layer/dev/1614103421160-2021-02-23T18:03:41.160Z/chromedriver2.zip"
-          },
-          "ScrapingPackagesLambdaLayerQualifiedArn": {
-            "Description": "Current Lambda layer version",
-            "Value": {
-              "Ref": "ScrapingPackagesLambdaLayer"
-            }
-          },
-          "ScrapingPackagesLambdaLayerHash": {
-            "Description": "Current Lambda layer hash",
-            "Value": "e4c9d8843acbf9279f523a59a5d3d4bfb8dbbc5a"
-          },
-          "ScrapingPackagesLambdaLayerS3Key": {
-            "Description": "Current Lambda layer S3Key",
-            "Value": "serverless/namus-layer/dev/1615862115782-2021-03-16T02:35:15.782Z/scrapingPackages.zip"
           },
           "SrapingPackagesLayerExport": {
             "Value": {
@@ -306,7 +306,7 @@
     "isDashboardMonitoringPreconfigured": false
   },
   "package": {
-    "artifactDirectoryName": "serverless/namus-layer/dev/1615862115782-2021-03-16T02:35:15.782Z",
+    "artifactDirectoryName": "serverless/namus-layer/dev/1615912262227-2021-03-16T16:31:02.227Z",
     "artifact": ""
   }
 }

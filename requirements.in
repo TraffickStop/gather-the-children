@@ -5,4 +5,3 @@ lxml
 webdriver-manager
 boto3
 requests
-pandas

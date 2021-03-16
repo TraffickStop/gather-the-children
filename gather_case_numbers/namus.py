@@ -12,7 +12,6 @@ import pdb, re, time
 import os
 import logging
 from os import path
-import pandas as pd
 from shutil import rmtree
 
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
