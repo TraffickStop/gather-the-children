@@ -132,10 +132,13 @@ def download_csv():
     wait_time = 1
     total_wait = 0
     while len(os.listdir(DOWNLOAD_PATH)) == 0:
+        logger.info('/tmp/ directory contents: {0}'.format(os.listdir('/tmp/')))
+        logger.info('/tmp/cases/ directory contents: {0}'.format(os.listdir(DOWNLOAD_PATH)))
         total_wait = wait_time + total_wait
         time.sleep(wait_time)
         logger.info('Waited {0} seconds for download.'.format(total_wait))
         if wait_time > 35:
+            logger.exception("Waited for {0} seconds and still could not find the download".format(total_wait))
             raise "Waited for {0} seconds and still could not find the download".format(total_wait)
 
         wait_time = wait_time * 2 # double the wait time every iteration
@@ -201,7 +204,7 @@ def send_to_sqs(record):
     message = json.dumps(record)
     client = boto3.client('sqs')
     response = client.send_message(
-        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
+        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers-dead-letter-queue',
         MessageBody=message
     )
     logger.info("Successfully sent message for: {0}".format(record['caseNumber']))
