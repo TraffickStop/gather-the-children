@@ -126,14 +126,12 @@ def download_csv():
     os.mkdir(DOWNLOAD_PATH)
 
     export_csv_link = '//*[@id="public"]/div[2]/div[4]/form/div[2]/section[2]/div/div/div/div/div[3]/div[2]/a/i'
-    
+ 
     driver.find_element_by_xpath(export_csv_link).click()
 
     wait_time = 1
     total_wait = 0
     while len(os.listdir(DOWNLOAD_PATH)) == 0:
-        logger.info('/tmp/ directory contents: {0}'.format(os.listdir('/tmp/')))
-        logger.info('/tmp/cases/ directory contents: {0}'.format(os.listdir(DOWNLOAD_PATH)))
         total_wait = wait_time + total_wait
         time.sleep(wait_time)
         logger.info('Waited {0} seconds for download.'.format(total_wait))
@@ -142,7 +140,7 @@ def download_csv():
             raise "Waited for {0} seconds and still could not find the download".format(total_wait)
 
         wait_time = wait_time * 2 # double the wait time every iteration
-    
+
     downloaded_file_name = os.listdir(DOWNLOAD_PATH)[0]
     return path.join(DOWNLOAD_PATH, downloaded_file_name)
 
