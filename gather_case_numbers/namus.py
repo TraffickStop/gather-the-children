@@ -147,7 +147,6 @@ def download_csv():
 def init_driver():
     logger.debug('Initializing global driver to variable named "driver"')
     options = Options()
-    options.binary_location = '/opt/headless-chromium'
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--single-process')
@@ -158,7 +157,7 @@ def init_driver():
     options.add_experimental_option('prefs', prefs)
 
     global driver
-    driver = webdriver.Chrome('/opt/chromedriver', chrome_options=options)
+    driver = webdriver.Chrome(chrome_options=options)
 
 def namus_login():
     login = '//*[@id="loginUsername"]'
@@ -200,7 +199,7 @@ def search():
 def send_to_sqs(record):
     logger.info("Sending to SQS for case number: {0}".format(record['caseNumber']))
     message = json.dumps(record)
-    client = boto3.client('sqs')
+    client = boto3.client('sqs', region_name='us-east-1')
     response = client.send_message(
         QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers-dead-letter-queue',
         MessageBody=message

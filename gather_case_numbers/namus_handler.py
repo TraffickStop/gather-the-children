@@ -8,20 +8,22 @@ LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logger = logging.getLogger()
 logger.setLevel(LOGLEVEL)
 
-def handler(event, context):
-    try:
-        gather_ids(gt_date='March-14-2021')
-        return {
-            'statusCode': 200,
-            'body': 'Successfully wrote to SQS',
-        }
-    except Exception as e:
-        logger.exception(e)
-        return {
-            'statusCode': 400,
-            'error': e
-        }
+gt_date = os.environ.get('GT_DATE', None)
+lt_date = os.environ.get('LT_DATE', None)
+states = os.environ.get('STATES', None)
 
+try:
+    gather_ids(gt_date=gt_date, lt_date=lt_date, states=states)
+    print({
+        'statusCode': 200,
+        'body': 'Successfully wrote to SQS',
+    }) 
+except Exception as e:
+    logger.exception(e)
+    print({
+        'statusCode': 400,
+        'error': e
+    })
 # Date ranges
 # gather_ids(lt_date='June-1-2011')
 # gather_ids(gt_date='June-2-2011', lt_date='April-1-2015')
