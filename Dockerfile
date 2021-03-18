@@ -13,14 +13,14 @@ RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 
 # set display port to avoid crash
 ENV DISPLAY=:99
-ENV GT_DATE="March-14-2021"
 
 # Install requirements first so this step is cached by Docker
 RUN mkdir namus
 WORKDIR /namus
 COPY requirements.txt .
-
 RUN pip install -r requirements.txt
 
 # copy code
 COPY gather_case_numbers/ .
+
+ENTRYPOINT python namus_handler.py
