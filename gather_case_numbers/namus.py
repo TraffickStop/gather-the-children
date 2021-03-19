@@ -38,12 +38,12 @@ DOWNLOAD_PATH = '/tmp/cases'
 
 def apply_filters(gt_date=None, lt_date=None, states=None):
     time.sleep(2)
-    logger.debug("Adding filters")
+    print("Adding filters")
     if states is not None: apply_state_filter(states)
     apply_date_filter(gt_date=gt_date, lt_date=lt_date)
 
 def apply_date_filter(gt_date=None, lt_date=None):
-    logger.debug('Setting date range...')
+    print('Setting date range...')
     time.sleep(2)
     if gt_date == None and lt_date == None:
         raise "must select a date"
@@ -109,7 +109,7 @@ def apply_date_filter(gt_date=None, lt_date=None):
         Select(year_box).select_by_visible_text(lt_date.split('-')[2])
 
 def apply_state_filter(states):
-    logger.debug('Adding selected states to filter...')
+    print('Adding selected states to filter...')
 
     circumstances_section = driver.find_element_by_id('Circumstances')
     labels_in_section = circumstances_section.find_elements_by_tag_name('label')
@@ -134,7 +134,7 @@ def download_csv():
     while len(os.listdir(DOWNLOAD_PATH)) == 0:
         total_wait = wait_time + total_wait
         time.sleep(wait_time)
-        logger.info('Waited {0} seconds for download.'.format(total_wait))
+        print('Waited {0} seconds for download.'.format(total_wait))
         if wait_time > 35:
             logger.exception("Waited for {0} seconds and still could not find the download".format(total_wait))
             raise "Waited for {0} seconds and still could not find the download".format(total_wait)
@@ -145,7 +145,7 @@ def download_csv():
     return path.join(DOWNLOAD_PATH, downloaded_file_name)
 
 def init_driver():
-    logger.debug('Initializing global driver to variable named "driver"')
+    print('Initializing global driver to variable named "driver"')
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
@@ -190,48 +190,48 @@ def process_cases(file_name):
         send_to_sqs(message)
 
 def search():
-    logger.debug('Searching...')
+    print('Searching...')
     search_results_section = driver.find_element_by_class_name('search-criteria-container')
     search_actions = search_results_section.find_element_by_class_name('search-criteria-container-actions').find_elements_by_tag_name('input')
     search_actions[1].click()
     time.sleep(1.5)
 
 def send_to_sqs(record):
-    logger.info("Sending to SQS for case number: {0}".format(record['caseNumber']))
+    print("Sending to SQS for case number: {0}".format(record['caseNumber']))
     message = json.dumps(record)
     client = boto3.client('sqs', region_name='us-east-1')
     response = client.send_message(
-        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers-dead-letter-queue',
+        QueueUrl='https://sqs.us-east-1.amazonaws.com/694415534571/case-numbers',
         MessageBody=message
     )
-    logger.info("Successfully sent message for: {0}".format(record['caseNumber']))
+    print("Successfully sent message for: {0}".format(record['caseNumber']))
 
 def main(gt_date=None, lt_date=None, states=None):
     init_driver()
 
-    logger.info('Navigating to namus.gov...')
+    print('Navigating to namus.gov...')
     driver.get("https://www.namus.gov/MissingPersons/Search")
 
     try:
-        logger.info('logging in to Namus account')
+        print('logging in to Namus account')
         namus_login()
 
-        logger.info('applying search filters')
+        print('applying search filters')
         apply_filters(gt_date=gt_date, lt_date=lt_date, states=states)
         
-        logger.info('navigating to results')
+        print('navigating to results')
         search()
         
-        logger.info('downloading csv')
+        print('downloading csv')
         file_name = download_csv()
 
-        logger.info('sending cases to sqs')
+        print('sending cases to sqs')
         process_cases(file_name)
 
-        logger.info('removing temp directory and contents')
+        print('removing temp directory and contents')
         if path.exists(DOWNLOAD_PATH): rmtree(DOWNLOAD_PATH)
 
-        logger.info('process completed successfully')
+        print('process completed successfully')
     except Exception as e:
         driver.quit()
         if path.exists(DOWNLOAD_PATH): rmtree(DOWNLOAD_PATH)
